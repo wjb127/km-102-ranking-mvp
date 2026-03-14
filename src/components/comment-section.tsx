@@ -234,16 +234,14 @@ export default function CommentSection({ categoryId, fingerprint }: Props) {
                       </p>
                     </div>
 
-                    {/* 신고 버튼 (자기 댓글엔 숨김) */}
-                    {!isMine && (
-                      <button
-                        onClick={() => setReportTarget(comment)}
-                        className="shrink-0 rounded-lg p-1.5 text-muted/40 opacity-0 transition-all hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
-                        aria-label="댓글 신고"
-                      >
-                        <Flag className="h-3.5 w-3.5" />
-                      </button>
-                    )}
+                    {/* 신고 버튼 */}
+                    <button
+                      onClick={() => setReportTarget(comment)}
+                      className="shrink-0 rounded-lg p-1.5 text-muted/50 transition-all hover:bg-danger/10 hover:text-danger"
+                      aria-label="댓글 신고"
+                    >
+                      <Flag className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </motion.div>
               );
