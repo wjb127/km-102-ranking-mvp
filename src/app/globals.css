@@ -14,20 +14,18 @@
   --success: #22c55e;
 }
 
-/* ── 다크 모드 ── */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #f1f5f9;
-    --primary: #8b5cf6;
-    --primary-hover: #a78bfa;
-    --accent: #818cf8;
-    --surface: #0f172a;
-    --muted: #94a3b8;
-    --border: #1e293b;
-    --danger: #f87171;
-    --success: #4ade80;
-  }
+/* ── 다크 모드 (class 기반) ── */
+.dark {
+  --background: #020617;
+  --foreground: #f1f5f9;
+  --primary: #8b5cf6;
+  --primary-hover: #a78bfa;
+  --accent: #818cf8;
+  --surface: #0f172a;
+  --muted: #94a3b8;
+  --border: #1e293b;
+  --danger: #f87171;
+  --success: #4ade80;
 }
 
 @theme inline {
