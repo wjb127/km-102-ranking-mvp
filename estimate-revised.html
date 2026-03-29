@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>수정 견적서 — MMA 분석 커뮤니티</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+
+    :root {
+      --primary: #7c3aed;
+      --primary-light: #ede9fe;
+      --primary-bg: #f5f3ff;
+      --accent: #6366f1;
+      --surface: #ffffff;
+      --bg: #fafafe;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --success: #22c55e;
+      --success-bg: #f0fdf4;
+      --warning: #f59e0b;
+      --warning-bg: #fffbeb;
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --info: #3b82f6;
+      --info-bg: #eff6ff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── 인쇄 설정 ── */
+    @media print {
+      @page { margin: 1.5cm; }
+      body { background: white; }
+      .cover { display: none !important; }
+      .cover-print { display: block !important; }
+      .no-print { display: none !important; }
+      .section { break-inside: avoid; }
+    }
+
+    /* ── Cover (화면용) ── */
+    .cover {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #334155 100%);
+      color: white;
+      padding: 3rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .cover::before {
+      content: '';
+      position: absolute;
+      top: -40%; left: -20%;
+      width: 80%; height: 80%;
+      background: radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .cover::after {
+      content: '';
+      position: absolute;
+      bottom: -30%; right: -10%;
+      width: 60%; height: 60%;
+      background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .cover-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(124,58,237,0.2);
+      border: 1px solid rgba(124,58,237,0.4);
+      border-radius: 100px;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(8px);
+      position: relative;
+      z-index: 1;
+    }
+    .cover-label {
+      display: inline-block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.1em;
+      position: relative;
+      z-index: 1;
+    }
+    .cover h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .cover-sub {
+      font-size: 1.1rem;
+      opacity: 0.7;
+      margin-bottom: 2.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .cover-prices {
+      display: flex;
+      gap: 3rem;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+    .cover-price-box {
+      text-align: center;
+    }
+    .cover-price-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.5;
+      margin-bottom: 0.25rem;
+    }
+    .cover-price-value {
+      font-size: 2rem;
+      font-weight: 800;
+    }
+    .cover-price-value.old {
+      text-decoration: line-through;
+      opacity: 0.4;
+    }
+    .cover-arrow {
+      font-size: 1.5rem;
+      opacity: 0.4;
+    }
+    .cover-meta {
+      margin-top: 3rem;
+      display: flex;
+      gap: 2rem;
+      font-size: 0.85rem;
+      opacity: 0.5;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Cover (인쇄 전용) ── */
+    .cover-print {
+      display: none;
+      padding: 4rem 2rem;
+      text-align: center;
+      border-bottom: 2px solid #000;
+      margin-bottom: 2rem;
+    }
+    .cover-print h1 {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #000;
+      margin-bottom: 0.5rem;
+    }
+    .cover-print p {
+      font-size: 1rem;
+      color: #333;
+      margin-bottom: 0.25rem;
+    }
+    .cover-print .print-prices {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1.5rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    /* ── Container ── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ── Section ── */
+    .section {
+      padding: 3rem 0;
+    }
+    .section + .section {
+      border-top: 1px solid var(--border);
+    }
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.5rem;
+      background: var(--primary);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 800;
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .section h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .section-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+      padding-left: 2.75rem;
+    }
+
+    /* ── 비교 테이블 ── */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+    .compare-table thead th {
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    .compare-table thead th:first-child {
+      border-radius: 0.75rem 0 0 0;
+    }
+    .compare-table thead th:last-child {
+      border-radius: 0 0.75rem 0 0;
+    }
+    .compare-table tbody td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .compare-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .compare-table tbody tr:nth-child(even) {
+      background: var(--primary-bg);
+    }
+    .compare-table .check { color: var(--success); font-weight: 700; }
+    .compare-table .cross { color: var(--danger); opacity: 0.5; }
+    .compare-table .new-badge {
+      display: inline-block;
+      background: var(--danger);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    /* ── 견적 카드 ── */
+    .estimate-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .estimate-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .estimate-card.highlight {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary), 0 8px 30px rgba(124,58,237,0.08);
+    }
+    .estimate-card.highlight::before {
+      content: '수정 견적';
+      position: absolute;
+      top: 0; right: 0;
+      background: var(--primary);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0 0.75rem 0 0.5rem;
+    }
+    .estimate-card .label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+    .estimate-card .title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+    .estimate-card .price {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--primary);
+    }
+    .estimate-card .price-note {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+    .estimate-card .duration {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      background: var(--primary-bg);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    /* ── 비용 상세 테이블 ── */
+    .price-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .price-table thead th {
+      background: #1e293b;
+      color: white;
+      font-weight: 700;
+      padding: 0.7rem 1rem;
+      text-align: left;
+      font-size: 0.8rem;
+    }
+    .price-table thead th:first-child {
+      border-radius: 0.75rem 0 0 0;
+    }
+    .price-table thead th:last-child {
+      border-radius: 0 0.75rem 0 0;
+      text-align: right;
+    }
+    .price-table tbody td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .price-table tbody td:last-child {
+      text-align: right;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .price-table tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    .price-table tbody tr.group-header td {
+      background: var(--primary-bg);
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 0.82rem;
+      padding: 0.5rem 1rem;
+    }
+    .price-table tbody tr.subtotal td {
+      background: #f1f5f9;
+      font-weight: 700;
+      border-top: 2px solid var(--border);
+    }
+    .price-table tfoot td {
+      padding: 0.85rem 1rem;
+      font-weight: 800;
+      font-size: 1rem;
+      background: #1e293b;
+      color: white;
+    }
+    .price-table tfoot td:first-child {
+      border-radius: 0 0 0 0.75rem;
+    }
+    .price-table tfoot td:last-child {
+      border-radius: 0 0 0.75rem 0;
+      text-align: right;
+    }
+    .price-sub {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+      display: block;
+    }
+
+    /* ── 일정 테이블 ── */
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .schedule-table thead th {
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      padding: 0.65rem 1rem;
+      text-align: left;
+      font-size: 0.8rem;
+    }
+    .schedule-table thead th:first-child { border-radius: 0.75rem 0 0 0; }
+    .schedule-table thead th:last-child { border-radius: 0 0.75rem 0 0; }
+    .schedule-table tbody td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .schedule-table tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    /* ── 카드 그리드 ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.25rem;
+    }
+    .info-card h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .info-card p, .info-card li {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .info-card ul {
+      padding-left: 1rem;
+    }
+    .info-card ul li {
+      margin-bottom: 0.2rem;
+    }
+
+    /* ── 알림 박스 ── */
+    .notice {
+      border-radius: 0.75rem;
+      padding: 1.25rem 1.5rem;
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .notice.info {
+      background: var(--info-bg);
+      border: 1px solid rgba(59,130,246,0.2);
+      color: #1e40af;
+    }
+    .notice.warning {
+      background: var(--warning-bg);
+      border: 1px solid rgba(245,158,11,0.2);
+      color: #92400e;
+    }
+    .notice.success {
+      background: var(--success-bg);
+      border: 1px solid rgba(34,197,94,0.2);
+      color: #166534;
+    }
+    .notice-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    /* ── 요청사항 리스트 ── */
+    .request-list {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 1.5rem;
+    }
+    .request-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.92rem;
+    }
+    .request-list .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .request-list .detail {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* ── 태그 ── */
+    .tag {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .tag.reuse { background: var(--success-bg); color: var(--success); }
+    .tag.new { background: var(--danger-bg); color: var(--danger); }
+    .tag.modify { background: var(--warning-bg); color: var(--warning); }
+    .tag.remove { background: #f1f5f9; color: var(--text-secondary); }
+    .tag.included { background: var(--info-bg); color: var(--info); }
+
+    /* ── 단계 카드 ── */
+    .phase-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .phase-card.recommended {
+      border-color: var(--primary);
+      box-shadow: 0 4px 20px rgba(124,58,237,0.1);
+    }
+    .phase-card.recommended::after {
+      content: 'RECOMMENDED';
+      position: absolute;
+      top: -0.6rem; right: 1rem;
+      background: var(--primary);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.2rem 0.75rem;
+      border-radius: 100px;
+      letter-spacing: 0.05em;
+    }
+    .phase-card .phase-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .phase-card .phase-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+    .phase-card .phase-price {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: var(--primary);
+    }
+    .phase-card .phase-duration {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.6rem;
+      background: var(--primary-bg);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+    }
+    .phase-card ul {
+      padding-left: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .phase-card ul li {
+      margin-bottom: 0.2rem;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+      margin-top: 1rem;
+    }
+
+    /* ── 유틸 ── */
+    .text-primary { color: var(--primary); }
+    .text-success { color: var(--success); }
+    .text-danger { color: var(--danger); }
+    .text-muted { color: var(--text-secondary); }
+    .font-bold { font-weight: 700; }
+    .mt-1 { margin-top: 0.5rem; }
+    .mt-2 { margin-top: 1rem; }
+    .mb-1 { margin-bottom: 0.5rem; }
+    .mb-2 { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ 커버 (화면용) ═══════════════ -->
+<div class="cover">
+  <div class="cover-badge">📋 수정 견적서</div>
+  <div class="cover-label">REVISED ESTIMATE</div>
+  <h1>MMA 분석 커뮤니티</h1>
+  <p class="cover-sub">인기투표 랭킹 → MMA 분석 커뮤니티 변경에 따른 수정 견적</p>
+
+  <div class="cover-prices">
+    <div class="cover-price-box">
+      <div class="cover-price-label">기존 견적</div>
+      <div class="cover-price-value old">150만원</div>
+    </div>
+    <div class="cover-arrow">→</div>
+    <div class="cover-price-box">
+      <div class="cover-price-label">수정 견적</div>
+      <div class="cover-price-value">350만원</div>
+    </div>
+  </div>
+
+  <div class="cover-meta">
+    <span>작성일: 2026.03.29</span>
+    <span>VAT 별도</span>
+    <span>예상 기간: 5~6주</span>
+  </div>
+</div>
+
+<!-- ═══════════════ 커버 (인쇄용) ═══════════════ -->
+<div class="cover-print">
+  <p style="font-size:0.85rem; color:#666;">REVISED ESTIMATE</p>
+  <h1>수정 견적서 — MMA 분석 커뮤니티</h1>
+  <p>인기투표 랭킹 → MMA 분석 커뮤니티 변경에 따른 수정 견적</p>
+  <div class="print-prices">
+    <span>기존: <s>150만원 / 3주</s></span>
+    <span>→</span>
+    <span>수정: 350만원 / 5~6주</span>
+  </div>
+  <p style="margin-top:1rem; font-size:0.85rem; color:#666;">작성일: 2026.03.29 · VAT 별도</p>
+</div>
+
+<div class="container">
+
+  <!-- ═══════════════ 1. 고객 수정 요청 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-number">1</span>
+      <h2>수정 요청사항</h2>
+    </div>
+    <p class="section-desc">고객님이 전달해주신 MMA 분석 커뮤니티 기능 목록입니다.</p>
+
+    <ol class="request-list">
+      <li>
+        <span class="num">1</span>
+        <div>
+          <strong>역대 1위 투표</strong>
+          <div class="detail">기존 인기투표 시스템 활용 — 종합격투기 선수 대상 투표</div>
+        </div>
+      </li>
+      <li>
+        <span class="num">2</span>
+        <div>
+          <strong>선수 검색 (선수 정보 + 댓글)</strong>
+          <div class="detail">선수 프로필 DB 구축, 검색, 상세 페이지, 선수별 댓글</div>
+        </div>
+      </li>
+      <li>
+        <span class="num">3</span>
+        <div>
+          <strong>경기 일정 (댓글)</strong>
+          <div class="detail">경기 일정 표시 + 경기별 댓글</div>
+        </div>
+      </li>
+      <li>
+        <span class="num">4</span>
+        <div>
+          <strong>게시판 (분석 / 토론 / 자유)</strong>
+          <div class="detail">3종 게시판 — 게시글 CRUD + 댓글</div>
+        </div>
+      </li>
+      <li>
+        <span class="num">5</span>
+        <div>
+          <strong>회원간 쪽지</strong>
+          <div class="detail">회원 간 1:1 메시지 기능</div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="notice info">
+      <span class="notice-icon">📌</span>
+      <div>
+        <strong>추가 확인 사항:</strong> 그래프(차트) 표시는 제외하는 것으로 확인하였습니다.
+        또한 게시판 및 쪽지 기능이 추가되므로 <strong>회원가입/로그인 시스템이 필수</strong>로 함께 구현됩니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 2. 변경 개요 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-number">2</span>
+      <h2>기존 견적 대비 변경사항</h2>
+    </div>
+    <p class="section-desc">기존에 협의드린 범위와 이번 수정 요청의 차이를 비교합니다.</p>
+
+    <div class="estimate-grid">
+      <div class="estimate-card">
+        <div class="label">기존 협의 견적</div>
+        <div class="title">인기투표 랭킹</div>
+        <div class="price">150만원</div>
+        <div class="price-note">VAT 별도</div>
+        <div class="duration">📅 3주</div>
+        <p class="mt-1" style="font-size:0.82rem; color:var(--text-secondary);">
+          카테고리별 인물 투표 + TOP10 랭킹<br>
+          게시글 형태 전환 + 댓글 포함<br>
+          비로그인 기반 서비스
+        </p>
+      </div>
+      <div class="estimate-card highlight">
+        <div class="label">수정 요청</div>
+        <div class="title">MMA 분석 커뮤니티</div>
+        <div class="price">350만원</div>
+        <div class="price-note">VAT 별도</div>
+        <div class="duration">📅 5~6주</div>
+        <p class="mt-1" style="font-size:0.82rem; color:var(--text-secondary);">
+          선수 투표 + 선수 DB + 경기일정<br>
+          게시판 3종 + 회원간 쪽지<br>
+          회원가입/로그인 기반 커뮤니티
+        </p>
+      </div>
+    </div>
+
+    <div class="notice warning">
+      <span class="notice-icon">⚠️</span>
+      <div>
+        <strong>핵심 변경:</strong> 서비스 성격이 <em>"비로그인 투표 사이트"</em>에서 <em>"회원 기반 커뮤니티"</em>로 변경됩니다.
+        회원 시스템이 추가되면 프로필, 권한 관리, 보안 등 연쇄적으로 개발 범위가 늘어나게 됩니다.
+        기존에 말씀드린 <strong>게시글 형태 전환 + 댓글</strong>은 기존 견적에 포함되지만,
+        회원 시스템 · 선수 DB · 경기일정 · 쪽지는 신규 기능으로 추가 비용이 발생합니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 3. 기능별 비교 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-number">3</span>
+      <h2>기능별 상세 비교</h2>
+    </div>
+    <p class="section-desc">각 기능이 기존 포함 / 수정 / 신규인지 구분합니다.</p>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th style="width:28%">기능</th>
+          <th style="width:24%">기존 (150만원)</th>
+          <th style="width:24%">수정 (MMA)</th>
+          <th style="width:24%">상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>투표 시스템</strong><br><span class="text-muted" style="font-size:0.8rem">인기투표</span></td>
+          <td><span class="check">✓</span> 카테고리별 투표</td>
+          <td><span class="check">✓</span> 역대 1위 투표</td>
+          <td><span class="tag reuse">기존 포함</span></td>
+        </tr>
+        <tr>
+          <td><strong>게시글 + 댓글</strong><br><span class="text-muted" style="font-size:0.8rem">기본 게시판</span></td>
+          <td><span class="check">✓</span> 게시글 형태 전환</td>
+          <td><span class="check">✓</span> 기본 구조 활용</td>
+          <td><span class="tag included">기존 포함</span></td>
+        </tr>
+        <tr>
+          <td><strong>관리자 페이지</strong><br><span class="text-muted" style="font-size:0.8rem">승인/삭제/관리</span></td>
+          <td><span class="check">✓</span> 기본 관리</td>
+          <td><span class="check">✓</span> 확장 관리</td>
+          <td><span class="tag modify">수정</span></td>
+        </tr>
+        <tr>
+          <td><strong>실시간 랭킹 그래프</strong><br><span class="text-muted" style="font-size:0.8rem">차트 시각화</span></td>
+          <td><span class="check">✓</span> 바 차트</td>
+          <td><span class="cross">✕</span> 제외 요청</td>
+          <td><span class="tag remove">제거</span></td>
+        </tr>
+        <tr>
+          <td><strong>카테고리 시스템</strong><br><span class="text-muted" style="font-size:0.8rem">다수 카테고리</span></td>
+          <td><span class="check">✓</span> 다수 카테고리</td>
+          <td><span class="cross">✕</span> MMA 단일 주제</td>
+          <td><span class="tag remove">간소화</span></td>
+        </tr>
+        <tr style="background: var(--danger-bg) !important;">
+          <td><strong>회원가입 / 로그인</strong><span class="new-badge">NEW</span><br><span class="text-muted" style="font-size:0.8rem">이메일/소셜 인증</span></td>
+          <td><span class="cross">✕</span> 비로그인</td>
+          <td><span class="check">✓</span> 필수</td>
+          <td><span class="tag new">신규</span></td>
+        </tr>
+        <tr style="background: var(--danger-bg) !important;">
+          <td><strong>선수 DB + 검색</strong><span class="new-badge">NEW</span><br><span class="text-muted" style="font-size:0.8rem">프로필 + 상세</span></td>
+          <td><span class="cross">✕</span></td>
+          <td><span class="check">✓</span> 검색 + 상세 + 댓글</td>
+          <td><span class="tag new">신규</span></td>
+        </tr>
+        <tr style="background: var(--danger-bg) !important;">
+          <td><strong>경기 일정</strong><span class="new-badge">NEW</span><br><span class="text-muted" style="font-size:0.8rem">일정 + 댓글</span></td>
+          <td><span class="cross">✕</span></td>
+          <td><span class="check">✓</span> 일정 표시 + 댓글</td>
+          <td><span class="tag new">신규</span></td>
+        </tr>
+        <tr style="background: var(--danger-bg) !important;">
+          <td><strong>게시판 3종 분리</strong><span class="new-badge">NEW</span><br><span class="text-muted" style="font-size:0.8rem">분석/토론/자유</span></td>
+          <td><span class="cross">✕</span> 기본 1종</td>
+          <td><span class="check">✓</span> 3종 + 검색</td>
+          <td><span class="tag new">신규 확장</span></td>
+        </tr>
+        <tr style="background: var(--danger-bg) !important;">
+          <td><strong>회원간 쪽지</strong><span class="new-badge">NEW</span><br><span class="text-muted" style="font-size:0.8rem">1:1 메시지</span></td>
+          <td><span class="cross">✕</span></td>
+          <td><span class="check">✓</span> 쪽지 송수신</td>
+          <td><span class="tag new">신규</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════ 4. 비용 상세 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-number">4</span>
+      <h2>비용 상세 내역</h2>
+    </div>
+    <p class="section-desc">기존 견적 기반 + 신규 기능 추가분으로 산출합니다.</p>
+
+    <table class="price-table">
+      <thead>
+        <tr>
+          <th>항목</th>
+          <th>설명</th>
+          <th>비용</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- 기존 견적 기반 -->
+        <tr class="group-header">
+          <td colspan="3">📋 기존 견적 범위 (이미 협의된 내용)</td>
+        </tr>
+        <tr>
+          <td><strong>프로젝트 설정 + 인프라</strong></td>
+          <td>Next.js + Supabase + Vercel 셋업<span class="price-sub">기존 구조 활용</span></td>
+          <td>15만원</td>
+        </tr>
+        <tr>
+          <td><strong>메인 페이지</strong></td>
+          <td>MMA 테마 메인 페이지<span class="price-sub">기존 레이아웃 기반 리디자인</span></td>
+          <td>15만원</td>
+        </tr>
+        <tr>
+          <td><strong>투표 시스템</strong></td>
+          <td>역대 1위 투표 (기존 로직 활용)<span class="price-sub">중복방지 + 투표 토글</span></td>
+          <td>20만원</td>
+        </tr>
+        <tr>
+          <td><strong>기본 게시판 + 댓글</strong></td>
+          <td>게시글 형태 전환 + 댓글 + 신고<span class="price-sub">기존 협의 범위 (댓글→게시글 전환)</span></td>
+          <td>30만원</td>
+        </tr>
+        <tr>
+          <td><strong>관리자 페이지</strong></td>
+          <td>승인/삭제 + 신고 관리<span class="price-sub">기존 관리 기능 유지</span></td>
+          <td>25만원</td>
+        </tr>
+        <tr>
+          <td><strong>반응형 + 다크모드 + SEO</strong></td>
+          <td>모바일 최적화 + 기본 SEO<span class="price-sub">기존 범위</span></td>
+          <td>20만원</td>
+        </tr>
+        <tr>
+          <td><strong>테스트 + 배포</strong></td>
+          <td>QA + Vercel 프로덕션 배포<span class="price-sub">기존 범위</span></td>
+          <td>15만원</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="color:var(--text-secondary); font-size:0.8rem;">그래프 제거 + 카테고리 간소화 절감</td>
+          <td style="color:var(--success);">-10만원</td>
+        </tr>
+        <tr class="subtotal">
+          <td colspan="2">기존 범위 소계</td>
+          <td>130만원</td>
+        </tr>
+
+        <!-- 신규 추가 항목 -->
+        <tr class="group-header">
+          <td colspan="3">🆕 신규 추가 기능</td>
+        </tr>
+        <tr>
+          <td><strong>회원가입 / 로그인</strong></td>
+          <td>이메일 + 소셜(카카오/구글) 로그인<span class="price-sub">Supabase Auth + 프로필 관리 + 세션 보안</span></td>
+          <td>50만원</td>
+        </tr>
+        <tr>
+          <td><strong>선수 DB + 검색</strong></td>
+          <td>선수 프로필 DB + 검색 + 상세 페이지<span class="price-sub">데이터 모델링 + 필터(이름/체급/국적) + 댓글</span></td>
+          <td>35만원</td>
+        </tr>
+        <tr>
+          <td><strong>경기 일정</strong></td>
+          <td>경기 일정 등록/표시 + 댓글<span class="price-sub">관리자 등록 + 날짜별 필터 + 경기별 댓글</span></td>
+          <td>30만원</td>
+        </tr>
+        <tr>
+          <td><strong>게시판 3종 분리 + 확장</strong></td>
+          <td>분석/토론/자유 게시판 분리<span class="price-sub">기본 1종 → 3종 확장 + 좋아요 + 검색 + 페이지네이션</span></td>
+          <td>35만원</td>
+        </tr>
+        <tr>
+          <td><strong>회원간 쪽지</strong></td>
+          <td>1:1 메시지 송수신<span class="price-sub">쪽지함(받은/보낸) + 읽음 상태 + 알림</span></td>
+          <td>40만원</td>
+        </tr>
+        <tr>
+          <td><strong>DB 확장 설계</strong></td>
+          <td>회원/게시판/쪽지 테이블 추가<span class="price-sub">기존 6테이블 → 15+ 테이블</span></td>
+          <td>15만원</td>
+        </tr>
+        <tr>
+          <td><strong>관리자 페이지 확장</strong></td>
+          <td>회원/게시판/쪽지 관리 기능 추가<span class="price-sub">기존 관리자 페이지에 기능 추가</span></td>
+          <td>15만원</td>
+        </tr>
+        <tr class="subtotal">
+          <td colspan="2">신규 추가 소계</td>
+          <td>220만원</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2">총 견적 (VAT 별도)</td>
+          <td>350만원</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="notice info" style="margin-top:1.5rem;">
+      <span class="notice-icon">📊</span>
+      <div>
+        <strong>비용 구성:</strong>
+        기존 협의 범위 <strong>130만원</strong> (그래프 제거/카테고리 간소화로 20만원 절감) +
+        신규 기능 <strong>220만원</strong> =
+        <strong>총 350만원</strong> (기존 대비 +200만원)
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 5. 단계별 진행 옵션 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-number">5</span>
+      <h2>단계별 진행 옵션</h2>
+    </div>
+    <p class="section-desc">한 번에 전체 구현 외에도, 단계적으로 나누어 진행하는 것도 가능합니다.</p>
+
+    <div class="phase-card recommended">
+      <div class="phase-header">
+        <div class="phase-title">1단계 — 핵심 기능</div>
+        <div class="phase-price">200만원</div>
+      </div>
+      <div class="phase-duration">📅 3주</div>
+      <ul>
+        <li><strong>회원가입/로그인</strong> — 이메일 + 소셜 로그인</li>
+        <li><strong>역대 1위 투표</strong> — 기존 투표 시스템 활용</li>
+        <li><strong>선수 검색 + 정보</strong> — 선수 DB + 검색 + 상세 + 댓글</li>
+        <li><strong>경기 일정</strong> — 일정 표시 + 댓글</li>
+        <li><strong>메인 페이지</strong> + 반응형 + 관리자 기본</li>
+      </ul>
+      <p class="mt-1" style="font-size:0.82rem; color:var(--text-secondary);">
+        → 서비스 런칭 가능한 최소 기능 세트. 이것만으로도 사이트 운영이 가능합니다.
+      </p>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-header">
+        <div class="phase-title">2단계 — 커뮤니티 확장</div>
+        <div class="phase-price">150만원</div>
+      </div>
+      <div class="phase-duration">📅 2~3주</div>
+      <ul>
+        <li><strong>게시판 3종</strong> — 분석/토론/자유 + 좋아요 + 검색</li>
+        <li><strong>회원간 쪽지</strong> — 1:1 메시지 + 알림</li>
+        <li><strong>관리자 확장</strong> — 게시판/쪽지/회원 관리</li>
+        <li><strong>추가 QA</strong> + 기능 보강</li>
+      </ul>
+      <p class="mt-1" style="font-size:0.82rem; color:var(--text-secondary);">
+        → 1단계 운영 후 사용자 반응을 보고 진행 여부를 결정할 수 있습니다.
+      </p>
+    </div>
+
+    <div class="notice success">
+      <span class="notice-icon">💡</span>
+      <div>
+        <strong>단계별 진행 시 장점:</strong><br>
+        · 초기 비용 부담을 줄이고, 1단계만으로 서비스 런칭 가능<br>
+        · 실제 사용자 피드백을 반영하여 2단계 기능을 조정할 수 있음<br>
+        · 1단계 + 2단계 합산 시 <strong>350만원</strong>으로 일괄 진행과 동일
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 6. 개발 일정 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-number">6</span>
+      <h2>개발 일정</h2>
+    </div>
+    <p class="section-desc">일괄 진행 시 예상 일정입니다. (착수일 기준)</p>
+
+    <table class="schedule-table">
+      <thead>
+        <tr>
+          <th style="width:15%">주차</th>
+          <th style="width:45%">작업 내용</th>
+          <th style="width:40%">산출물</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1주차</strong></td>
+          <td>프로젝트 셋업 + DB 설계 + 회원 시스템</td>
+          <td>Supabase 스키마, 로그인/회원가입</td>
+        </tr>
+        <tr>
+          <td><strong>2주차</strong></td>
+          <td>선수 DB + 검색 + 투표 + 메인 페이지</td>
+          <td>선수 검색/상세/투표 + 메인 랜딩</td>
+        </tr>
+        <tr>
+          <td><strong>3주차</strong></td>
+          <td>경기 일정 + 기본 게시판</td>
+          <td>경기 일정 CRUD + 게시판 기본 구조</td>
+        </tr>
+        <tr>
+          <td><strong>4주차</strong></td>
+          <td>게시판 3종 완성 + 댓글/좋아요</td>
+          <td>분석/토론/자유 게시판 완성</td>
+        </tr>
+        <tr>
+          <td><strong>5주차</strong></td>
+          <td>쪽지 시스템 + 관리자 페이지</td>
+          <td>쪽지 송수신 + 관리자 콘솔</td>
+        </tr>
+        <tr>
+          <td><strong>6주차</strong></td>
+          <td>반응형 마무리 + QA + 배포</td>
+          <td>모바일 대응 + 버그 수정 + 프로덕션</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════ 7. 기술 스택 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-number">7</span>
+      <h2>기술 스택 변경</h2>
+    </div>
+    <p class="section-desc">기존 스택에서 추가되는 요소입니다.</p>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>영역</th>
+          <th>기존</th>
+          <th>변경/추가</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>프론트엔드</strong></td>
+          <td>Next.js + Tailwind + SWR</td>
+          <td>동일 (페이지 수 증가)</td>
+        </tr>
+        <tr>
+          <td><strong>인증</strong></td>
+          <td>FingerprintJS (비로그인)</td>
+          <td><span class="text-danger font-bold">+ Supabase Auth</span> (카카오/구글)</td>
+        </tr>
+        <tr>
+          <td><strong>데이터베이스</strong></td>
+          <td>Supabase (6 테이블)</td>
+          <td><span class="text-danger font-bold">15+ 테이블</span> (확장)</td>
+        </tr>
+        <tr>
+          <td><strong>실시간</strong></td>
+          <td>SWR 폴링</td>
+          <td><span class="text-danger font-bold">+ Supabase Realtime</span> (쪽지 알림)</td>
+        </tr>
+        <tr>
+          <td><strong>스토리지</strong></td>
+          <td>외부 이미지 URL</td>
+          <td><span class="text-danger font-bold">+ Supabase Storage</span> (프로필 사진)</td>
+        </tr>
+        <tr>
+          <td><strong>배포</strong></td>
+          <td>Vercel</td>
+          <td>동일</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="notice info">
+      <span class="notice-icon">💰</span>
+      <div>
+        <strong>월 서버 비용:</strong> Supabase Pro 구독 $25/월(약 3.5만원).
+        Vercel은 무료 플랜으로 운영 가능합니다. (기존과 동일)
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 8. 참고사항 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-number">8</span>
+      <h2>참고사항</h2>
+    </div>
+    <p class="section-desc">견적 관련 유의사항입니다.</p>
+
+    <div class="card-grid">
+      <div class="info-card">
+        <h4>💰 비용 관련</h4>
+        <ul>
+          <li>상기 금액은 VAT 별도</li>
+          <li>계약금 30% / 중도금 40% / 잔금 30%</li>
+          <li>기획 변경 시 추가 비용 발생 가능</li>
+          <li>서버 비용(Supabase/Vercel)은 별도</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4>📅 일정 관련</h4>
+        <ul>
+          <li>기획 확정 후 착수</li>
+          <li>주 단위 진행 보고</li>
+          <li>기획 변경 시 일정 연장 가능</li>
+          <li>QA 기간 포함 (1주)</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4>🔧 유지보수</h4>
+        <ul>
+          <li>런칭 후 1개월 무상 버그 수정</li>
+          <li>이후 월 유지보수 별도 협의</li>
+          <li>기능 추가는 별도 견적</li>
+          <li>소스코드 + 소유권 완전 이전</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4>📋 포함 범위</h4>
+        <ul>
+          <li>프론트엔드 + 백엔드 개발</li>
+          <li>DB 설계 + 마이그레이션</li>
+          <li>반응형 (모바일/태블릿/데스크탑)</li>
+          <li>Vercel 프로덕션 배포</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="notice info" style="margin-top:1.5rem;">
+      <span class="notice-icon">📌</span>
+      <div>
+        <strong>선수 데이터 관련:</strong>
+        선수 프로필 데이터는 엑셀로 정리해주시면 일괄 업로드 가능합니다.
+        경기 정보 API가 확인되면 자동 연동도 가능합니다. (API 스펙 확인 후 추가 비용 협의)
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ Footer ═══════════════ -->
+<div class="footer">
+  <p>본 견적서는 고객 요청 기반으로 작성되었으며, 상세 기획 확정 시 변동될 수 있습니다.</p>
+  <p style="margin-top:0.5rem;">작성일: 2026.03.29</p>
+</div>
+
+</body>
+</html>
