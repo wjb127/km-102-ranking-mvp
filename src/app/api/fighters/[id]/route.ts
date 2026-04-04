@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFighterById, FALLBACK_FIGHTERS } from "@/lib/api/mma";
 
+// ── weight_class 객체 → 문자열 정규화 ──
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizeFighter(f: any) {
+  return {
+    ...f,
+    weight_class:
+      typeof f.weight_class === "object" && f.weight_class !== null
+        ? f.weight_class.name ?? f.weight_class.abbreviation ?? null
+        : f.weight_class ?? null,
+  };
+}
+
 // ── 선수 상세 API ──
 
 export async function GET(
@@ -13,7 +25,7 @@ export async function GET(
     const result = await getFighterById(id);
 
     if (result?.data) {
-      return NextResponse.json({ success: true, data: result.data });
+      return NextResponse.json({ success: true, data: normalizeFighter(result.data) });
     }
 
     // API 실패 → 폴백에서 검색
