@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MMA 분석 커뮤니티 웹사이트 개발 용역 계약서 (초안)</title>
+<style>
+  :root {
+    --text: #111;
+    --muted: #555;
+    --line: #333;
+    --line-light: #ccc;
+    --bg: #fff;
+    --highlight-bg: #f5f5f5;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 60px 56px 80px;
+    background: #fff;
+  }
+
+  .header {
+    text-align: center;
+    padding-bottom: 24px;
+    border-bottom: 2px solid var(--line);
+    margin-bottom: 40px;
+  }
+
+  .header .badge {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    border: 1px solid var(--line-light);
+    padding: 4px 12px;
+    margin-bottom: 12px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.5px;
+  }
+
+  .header .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .meta-box {
+    border: 1px solid var(--line);
+    padding: 20px 24px;
+    margin-bottom: 40px;
+    font-size: 13px;
+  }
+
+  .meta-box dl {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    row-gap: 8px;
+    margin: 0;
+  }
+
+  .meta-box dt {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .meta-box dd {
+    margin: 0;
+    font-weight: 500;
+  }
+
+  .party-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  .party {
+    border: 1px solid var(--line);
+    padding: 20px 24px;
+    font-size: 13px;
+  }
+
+  .party h3 {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--line-light);
+    font-weight: 600;
+  }
+
+  .party dl {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    row-gap: 6px;
+    margin: 0;
+  }
+
+  .party dt {
+    color: var(--muted);
+  }
+
+  .party dd {
+    margin: 0;
+  }
+
+  .preamble {
+    font-size: 13px;
+    margin-bottom: 40px;
+    padding: 20px 0;
+    border-top: 1px dashed var(--line-light);
+    border-bottom: 1px dashed var(--line-light);
+    text-align: center;
+    color: var(--muted);
+  }
+
+  section.article {
+    margin-bottom: 32px;
+  }
+
+  .article-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .article-title .num {
+    display: inline-block;
+    margin-right: 8px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .clause {
+    margin-bottom: 12px;
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .clause::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 8px;
+    height: 1px;
+    background: var(--text);
+  }
+
+  .clause-label {
+    font-weight: 600;
+  }
+
+  .sub-list {
+    margin: 6px 0 0;
+    padding-left: 18px;
+  }
+
+  .sub-list li {
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+
+  table.plain {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 12px 0;
+  }
+
+  table.plain th,
+  table.plain td {
+    border: 1px solid var(--line);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  table.plain th {
+    background: var(--highlight-bg);
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  table.plain td .minor {
+    color: var(--muted);
+    font-size: 11.5px;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .fill {
+    display: inline-block;
+    min-width: 120px;
+    border-bottom: 1px solid var(--line);
+    padding: 0 6px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .fill.short { min-width: 60px; }
+  .fill.long { min-width: 220px; }
+
+  .emphasis {
+    background: var(--highlight-bg);
+    padding: 12px 16px;
+    border-left: 3px solid var(--line);
+    font-size: 12.5px;
+    margin: 12px 0;
+    color: var(--text);
+  }
+
+  .note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .signature-block {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 2px solid var(--line);
+  }
+
+  .signature-date {
+    text-align: center;
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+
+  .signature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+  }
+
+  .signature-box {
+    font-size: 13px;
+  }
+
+  .signature-box .role {
+    font-weight: 600;
+    margin-bottom: 16px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  .signature-box .sign-row {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    row-gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .signature-box .sign-row dt {
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .signature-box .sign-row dd {
+    margin: 0;
+    border-bottom: 1px solid var(--line);
+    min-height: 22px;
+    padding-bottom: 2px;
+  }
+
+  .stamp-area {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .stamp-line {
+    flex: 1;
+    border-bottom: 1px solid var(--line);
+    min-height: 22px;
+  }
+
+  .stamp-label {
+    font-size: 11px;
+    color: var(--muted);
+    width: 40px;
+    text-align: center;
+    padding-bottom: 2px;
+    border: 1px solid var(--line-light);
+    padding: 4px;
+    white-space: nowrap;
+  }
+
+  .footer-info {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px dashed var(--line-light);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  .toc {
+    margin-bottom: 40px;
+    padding: 20px 24px;
+    border: 1px solid var(--line-light);
+    font-size: 12.5px;
+  }
+
+  .toc h4 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .toc ol {
+    margin: 0;
+    padding-left: 20px;
+    columns: 2;
+    column-gap: 24px;
+  }
+
+  .toc li {
+    margin-bottom: 3px;
+    break-inside: avoid;
+  }
+
+  @media print {
+    body { font-size: 11.5pt; }
+    .page { padding: 24px; }
+    .article { page-break-inside: avoid; }
+    .signature-block { page-break-inside: avoid; }
+  }
+
+  @media (max-width: 640px) {
+    .page { padding: 32px 20px; }
+    .party-block { grid-template-columns: 1fr; }
+    .signature-grid { grid-template-columns: 1fr; gap: 40px; }
+    .meta-box dl { grid-template-columns: 90px 1fr; }
+    .toc ol { columns: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="badge">DRAFT — 초안</div>
+    <h1>웹사이트 개발 용역 계약서</h1>
+    <div class="subtitle">MMA 분석 커뮤니티 구축 프로젝트</div>
+  </div>
+
+  <!-- 프로젝트 메타 -->
+  <div class="meta-box">
+    <dl>
+      <dt>프로젝트명</dt>
+      <dd>MMA 분석 커뮤니티 웹사이트 개발</dd>
+      <dt>계약 체결일</dt>
+      <dd><span class="fill">2026년   월   일</span></dd>
+      <dt>개발 시작일</dt>
+      <dd><span class="fill">2026년   월   일</span></dd>
+      <dt>개발 완료 예정일</dt>
+      <dd><span class="fill">개발 시작일 기준 3주 ~ 4주 이내</span></dd>
+      <dt>계약 유형</dt>
+      <dd><strong>B안 — 일정 API 연동형</strong></dd>
+    </dl>
+  </div>
+
+  <!-- 계약 당사자 -->
+  <div class="party-block">
+    <div class="party">
+      <h3>발주인 (갑)</h3>
+      <dl>
+        <dt>성명</dt><dd><span class="fill long"></span></dd>
+        <dt>연락처</dt><dd><span class="fill long"></span></dd>
+        <dt>이메일</dt><dd><span class="fill long"></span></dd>
+        <dt>주소</dt><dd><span class="fill long"></span></dd>
+      </dl>
+    </div>
+    <div class="party">
+      <h3>수행자 (을)</h3>
+      <dl>
+        <dt>성명</dt><dd><span class="fill long"></span></dd>
+        <dt>연락처</dt><dd><span class="fill long"></span></dd>
+        <dt>이메일</dt><dd><span class="fill long"></span></dd>
+        <dt>주소</dt><dd><span class="fill long"></span></dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- 전문 -->
+  <div class="preamble">
+    발주인(이하 &quot;갑&quot;)과 수행자(이하 &quot;을&quot;)는 아래 프로젝트의 성실한 수행을 위하여
+    다음과 같이 계약을 체결한다.
+  </div>
+
+  <!-- 목차 -->
+  <div class="toc">
+    <h4>목 차</h4>
+    <ol>
+      <li>계약의 목적</li>
+      <li>용역의 범위</li>
+      <li>개발 기간</li>
+      <li>계약 금액 및 지급 방법</li>
+      <li>산출물 및 소유권 이전</li>
+      <li>운영 비용 (갑의 부담)</li>
+      <li>추가 요청 및 변경</li>
+      <li>갑과 을의 의무</li>
+      <li>유지보수 및 하자보수</li>
+      <li>비밀 유지</li>
+      <li>계약의 해지</li>
+      <li>지연배상 및 면책</li>
+      <li>분쟁 해결</li>
+      <li>기타</li>
+    </ol>
+  </div>
+
+  <!-- 제1조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제1조</span>계약의 목적</h2>
+    <div class="clause">
+      본 계약은 갑이 을에게 MMA(종합격투기) 분석 커뮤니티 웹사이트 개발을 위탁하고,
+      을이 이를 성실히 수행하여 갑에게 납품함에 있어 양 당사자의 권리와 의무를 정함을 목적으로 한다.
+    </div>
+  </section>
+
+  <!-- 제2조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제2조</span>용역의 범위</h2>
+
+    <div class="clause">
+      <span class="clause-label">① 공통 포함 기능</span>
+      <ul class="sub-list">
+        <li>역대 1위 투표 (GOAT 투표) 기능</li>
+        <li>선수 검색 · 선수 프로필 페이지 · 선수별 댓글 기능</li>
+        <li>경기 일정 페이지 · 경기별 댓글 기능</li>
+        <li>게시판 기능 — 분석 · 토론 · 자유 카테고리 분류 및 전체 목록 통합 조회</li>
+        <li>게시글 기본 기능 — 조회수, 추천, 사진 업로드 (Cloudinary 연동)</li>
+        <li>회원가입 · 로그인 · 회원 간 1:1 쪽지 기능</li>
+        <li>반응형 UI (모바일 · 태블릿 · 데스크탑 대응)</li>
+      </ul>
+    </div>
+
+    <div class="clause">
+      <span class="clause-label">② 데이터 구축 · 운영 방식 (B안)</span>
+      <table class="plain">
+        <thead>
+          <tr>
+            <th style="width: 22%;">구분</th>
+            <th>방식</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>선수 프로필 / 전적 (초기)</td>
+            <td>ufcstats.com 1회성 크롤링을 통한 초기 DB 일괄 구축</td>
+          </tr>
+          <tr>
+            <td>선수 프로필 / 전적 (이후 갱신)</td>
+            <td>balldontlie MMA API 연동을 통한 이후 경기 결과 누적 저장</td>
+          </tr>
+          <tr>
+            <td>경기 일정</td>
+            <td>balldontlie MMA API를 통한 자동 연동</td>
+          </tr>
+          <tr>
+            <td>게시판 · 회원 · 쪽지 · 투표</td>
+            <td>Neon(PostgreSQL) 기반 자체 데이터베이스 구축</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        ※ 경기 무효 · 취소 처리의 경우, 외부 API가 해당 정보를 제공하는 범위 내에서 전적이 자동 복귀된다.
+      </div>
+    </div>
+
+    <div class="clause">
+      <span class="clause-label">③ 외부 서비스 연동</span>
+      <ul class="sub-list">
+        <li>MMA 데이터 API — balldontlie (<span class="fill short">유료 플랜</span>, 갑이 발급·구독)</li>
+        <li>이미지 저장 · 변환 — Cloudinary (갑이 계정 발급, 무료 플랜 시작 가능)</li>
+        <li>데이터베이스 — Neon (서버리스 PostgreSQL, 갑이 계정 발급)</li>
+        <li>회원 인증 — Auth.js(NextAuth) 기반 자체 구현 (별도 인증 서비스 비용 없음)</li>
+        <li>호스팅 · 배포 — Vercel (갑이 계정 발급)</li>
+      </ul>
+    </div>
+
+    <div class="clause">
+      <span class="clause-label">④ 미포함 사항</span>
+      <ul class="sub-list">
+        <li>영상 업로드 · 인코딩 · 스트리밍 기능 (유튜브/인스타 링크 임베드는 포함)</li>
+        <li>모바일 앱(iOS/Android) 네이티브 빌드</li>
+        <li>결제 · 수익화 · 배너 광고 기능</li>
+        <li>실시간 채팅 · 푸시 알림 (쪽지는 포함, 별도 푸시 알림은 제외)</li>
+        <li>본 계약서 제2조 ①~③항에 명시되지 않은 그 외의 기능</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 제3조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제3조</span>개발 기간</h2>
+    <div class="clause">
+      개발 기간은 개발 시작일로부터 <strong>3주 ~ 4주</strong>로 한다.
+    </div>
+    <div class="note">
+      ※ 갑의 피드백 지연, 외부 API 장애, 요구사항 변경 등 을의 귀책이 아닌 사유로 발생한 지연은
+      위 기간에 포함되지 아니한다.
+    </div>
+  </section>
+
+  <!-- 제4조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제4조</span>계약 금액 및 지급 방법</h2>
+
+    <div class="clause">
+      <span class="clause-label">① 계약 금액</span>
+      <div class="emphasis">
+        금 <strong>이백사십만원정 (₩2,400,000)</strong> (VAT 별도)
+      </div>
+    </div>
+
+    <div class="clause">
+      <span class="clause-label">② 지급 방식</span>
+      <table class="plain">
+        <thead>
+          <tr>
+            <th style="width: 22%;">구분</th>
+            <th style="width: 20%;">비율</th>
+            <th>지급 시점</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>계약금</td><td>50%</td><td>계약 체결 후 3영업일 이내</td></tr>
+          <tr><td>잔금</td><td>50%</td><td>최종 납품 및 갑의 검수 완료 후 3영업일 이내</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="clause">
+      <span class="clause-label">③ 입금 계좌</span>
+      <div class="emphasis">
+        <span class="fill long">은행명 · 계좌번호 · 예금주</span>
+      </div>
+    </div>
+
+    <div class="clause">
+      <span class="clause-label">④ 갑은 입금 후 증빙을 을에게 통보한다.</span>
+    </div>
+  </section>
+
+  <!-- 제5조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제5조</span>산출물 및 소유권 이전</h2>
+    <div class="clause">
+      ① 을은 최종 납품 시 다음 산출물을 갑에게 제공한다.
+      <ul class="sub-list">
+        <li>완성된 웹사이트 (배포 URL 포함)</li>
+        <li>전체 소스코드 (Git 저장소 접근 권한 또는 압축 파일 형태)</li>
+        <li>Neon · Vercel · Cloudinary 등 외부 서비스 계정 설정 인수 자료</li>
+        <li>관리자 페이지 사용 가이드</li>
+      </ul>
+    </div>
+    <div class="clause">
+      ② 본 계약에 따라 제작된 산출물의 저작권 및 소유권은 <strong>잔금 지급 완료 시점에 갑에게 완전히 이전</strong>된다.
+    </div>
+    <div class="clause">
+      ③ 단, 을이 사전에 보유하고 있던 범용 코드 · 라이브러리 · 템플릿과 오픈소스 라이선스가 적용된
+      구성요소는 각 라이선스 조항에 따르며, 본조 ②항의 대상에서 제외된다.
+    </div>
+  </section>
+
+  <!-- 제6조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제6조</span>운영 비용 (갑의 부담)</h2>
+    <div class="clause">
+      서비스 운영에 필요한 다음의 월 정기 비용은 갑이 부담한다.
+    </div>
+    <table class="plain">
+      <thead>
+        <tr>
+          <th>항목</th>
+          <th>예상 비용</th>
+          <th>비고</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Neon</td>
+          <td>무료 시작 / 초과 시 유료</td>
+          <td>서버리스 PostgreSQL (트래픽 · 저장용량 증가 시 Launch 플랜 월 19 USD 전환)</td>
+        </tr>
+        <tr>
+          <td>balldontlie MMA API</td>
+          <td>월 39.99 USD (예정)</td>
+          <td>선수 · 경기 · 배당 데이터</td>
+        </tr>
+        <tr>
+          <td>Cloudinary</td>
+          <td>무료 시작 / 초과 시 유료</td>
+          <td>이미지 저장 · 변환</td>
+        </tr>
+        <tr>
+          <td>Vercel</td>
+          <td>무료 시작 / 트래픽 증가 시 유료</td>
+          <td>호스팅 · 배포</td>
+        </tr>
+        <tr>
+          <td>도메인</td>
+          <td>연 1 ~ 3만원 내외</td>
+          <td>갑이 직접 구매 · 관리</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">
+      ※ 상기 비용은 각 서비스 제공자의 요금 정책에 따라 변동될 수 있으며, 을은 이에 대한 책임을 지지 아니한다.
+    </div>
+  </section>
+
+  <!-- 제7조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제7조</span>추가 요청 및 변경</h2>
+    <div class="clause">
+      ① 본 계약서 제2조에 명시되지 아니한 기능의 추가 · 대폭적인 변경 요청은 별도 견적 및 합의에 따라
+      차액 결제 방식으로 진행한다.
+    </div>
+    <div class="clause">
+      ② 경미한 수정(문구 변경, 색상 조정 등)은 갑의 검수 기간 내 무상으로 반영한다.
+    </div>
+    <div class="clause">
+      ③ 기능 변경 요청 발생 시 을은 예상 소요 시간 · 추가 비용 · 일정 변동을 서면(카카오톡, 이메일 등 포함)으로
+      갑에게 고지하고, 갑의 서면 승인 후 작업을 진행한다.
+    </div>
+  </section>
+
+  <!-- 제8조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제8조</span>갑과 을의 의무</h2>
+    <div class="clause">
+      <span class="clause-label">① 갑의 의무</span>
+      <ul class="sub-list">
+        <li>계약 금액을 제4조의 일정에 따라 지급한다.</li>
+        <li>외부 서비스(Neon · balldontlie · Cloudinary · Vercel 등) 계정 발급 및 결제 수단 등록을 수행한다.</li>
+        <li>개발에 필요한 자료(로고, 문구, 이미지, 엑셀 데이터 등)를 지체 없이 제공한다.</li>
+        <li>을의 요청 사항 및 중간 산출물에 대해 영업일 기준 2일 이내 회신한다.</li>
+      </ul>
+    </div>
+    <div class="clause">
+      <span class="clause-label">② 을의 의무</span>
+      <ul class="sub-list">
+        <li>본 계약서 제2조의 범위에 따라 성실히 개발을 수행한다.</li>
+        <li>주요 마일스톤마다 갑에게 진행 상황을 공유한다.</li>
+        <li>납품 후 제9조에 따른 하자보수 의무를 이행한다.</li>
+        <li>갑에게 전달된 모든 자료 · 계정 정보를 안전하게 관리한다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 제9조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제9조</span>유지보수 및 하자보수</h2>
+    <div class="clause">
+      ① 최종 납품일로부터 <strong>30일</strong>간 을은 본 계약서 제2조의 범위 내에서 발생한 버그 · 오류를
+      무상으로 수정한다.
+    </div>
+    <div class="clause">
+      ② 상기 기간 경과 후 또는 기능 추가 · 외부 API 스펙 변경에 따른 재작업은 별도 유상 유지보수 계약으로
+      진행한다.
+    </div>
+    <div class="clause">
+      ③ 다음의 경우는 하자보수 범위에서 제외된다.
+      <ul class="sub-list">
+        <li>갑 또는 제3자가 소스코드를 임의로 수정하여 발생한 오류</li>
+        <li>외부 서비스 제공자의 장애 · 정책 변경에 따른 문제</li>
+        <li>갑이 제공한 자료의 오류로 발생한 문제</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 제10조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제10조</span>비밀 유지</h2>
+    <div class="clause">
+      갑과 을은 본 계약의 이행 과정에서 취득한 상대방의 영업비밀 · 개인정보 · 기술자료 등을
+      계약 기간 및 계약 종료 후에도 상대방의 사전 서면 동의 없이 제3자에게 누설하거나 본 계약 이외의
+      목적으로 사용할 수 없다.
+    </div>
+  </section>
+
+  <!-- 제11조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제11조</span>계약의 해지</h2>
+    <div class="clause">
+      ① 일방이 본 계약을 중대하게 위반하고 상대방의 서면 시정 요청 후 7일 이내에 시정하지 아니할 경우,
+      상대방은 본 계약을 해지할 수 있다.
+    </div>
+    <div class="clause">
+      ② 갑의 귀책사유로 계약이 해지된 경우, 을은 이미 수행한 업무 분량에 해당하는 금액을 청구할 수 있다.
+    </div>
+    <div class="clause">
+      ③ 을의 귀책사유로 계약이 해지된 경우, 을은 이미 수령한 계약금 중 미수행분에 해당하는 금액을
+      갑에게 반환한다.
+    </div>
+  </section>
+
+  <!-- 제12조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제12조</span>지연배상 및 면책</h2>
+    <div class="clause">
+      ① 을의 귀책사유로 납품이 7일 이상 지연될 경우, 지연 일수 1일당 계약 금액의 0.1%를 갑에게
+      지연배상금으로 지급한다. 단, 총 지연배상금은 계약 금액의 10%를 초과하지 아니한다.
+    </div>
+    <div class="clause">
+      ② 천재지변 · 전쟁 · 팬데믹 · 외부 서비스 장애 등 불가항력 사유로 인한 지연은 면책된다.
+    </div>
+  </section>
+
+  <!-- 제13조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제13조</span>분쟁 해결</h2>
+    <div class="clause">
+      ① 본 계약과 관련하여 분쟁이 발생할 경우 양 당사자는 상호 신의성실의 원칙에 따라 협의하여 해결한다.
+    </div>
+    <div class="clause">
+      ② 협의가 이루어지지 아니할 경우, <span class="fill short">서울</span>중앙지방법원을 제1심 관할 법원으로 한다.
+    </div>
+  </section>
+
+  <!-- 제14조 -->
+  <section class="article">
+    <h2 class="article-title"><span class="num">제14조</span>기타</h2>
+    <div class="clause">
+      ① 본 계약서에 명시되지 아니한 사항은 관련 법령 및 상관례에 따른다.
+    </div>
+    <div class="clause">
+      ② 본 계약의 변경은 양 당사자의 서면 합의(이메일, 카카오톡 등 전자적 기록 포함)에 의해서만 효력이 발생한다.
+    </div>
+    <div class="clause">
+      ③ 본 계약서는 2부를 작성하여 갑과 을이 각 1부씩 보관한다. 전자 서명 또는 스캔본의 경우 원본과 동일한 효력을 가진다.
+    </div>
+  </section>
+
+  <!-- 서명란 -->
+  <div class="signature-block">
+    <div class="signature-date">
+      <span class="fill short">2026</span>년 &nbsp; <span class="fill short"></span>월 &nbsp; <span class="fill short"></span>일
+    </div>
+
+    <div class="signature-grid">
+      <div class="signature-box">
+        <div class="role">발 주 인 (갑)</div>
+        <dl class="sign-row">
+          <dt>성명</dt><dd></dd>
+          <dt>연락처</dt><dd></dd>
+          <dt>주소</dt><dd></dd>
+        </dl>
+        <div class="stamp-area">
+          <div class="stamp-line"></div>
+          <div class="stamp-label">서명/인</div>
+        </div>
+      </div>
+
+      <div class="signature-box">
+        <div class="role">수 행 자 (을)</div>
+        <dl class="sign-row">
+          <dt>성명</dt><dd></dd>
+          <dt>연락처</dt><dd></dd>
+          <dt>주소</dt><dd></dd>
+        </dl>
+        <div class="stamp-area">
+          <div class="stamp-line"></div>
+          <div class="stamp-label">서명/인</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-info">
+    본 문서는 계약 초안이며, 양 당사자의 검토 및 협의를 거쳐 최종안이 확정됩니다.<br/>
+    기능 추가 · 금액 조정 등 수정사항이 있으시면 을에게 회신해 주시기 바랍니다.
+  </div>
+
+</div>
+</body>
+</html>

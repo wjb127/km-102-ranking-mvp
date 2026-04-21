@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MmaFighter, MmaEvent } from "@/lib/api/mma";
+import { HeroBanner, NoticeBanner } from "@/components/hero-banner";
 
 // ── 타입 ──
 
@@ -92,30 +93,30 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ── 히어로 ── */}
-      <section className="relative overflow-hidden pt-10 pb-14 md:pt-12 md:pb-20">
-        {/* 배경 */}
+      {/* ── 히어로 (컴팩트) ── */}
+      <section className="relative overflow-hidden pt-8 pb-6 md:pt-10 md:pb-8">
+        {/* 배경 glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-primary/8 blur-3xl" />
           <div className="absolute bottom-[-10%] right-[-15%] w-[50%] h-[50%] rounded-full bg-accent/6 blur-3xl" />
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
           <motion.div
-            initial={{ opacity: 0, y: -16 }}
+            initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" as const }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-semibold mb-6"
+            transition={{ duration: 0.45, ease: "easeOut" as const }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-semibold mb-3"
           >
-            <Swords className="w-4 h-4" />
+            <Swords className="w-3.5 h-3.5" />
             <span>MMA 분석 커뮤니티</span>
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.08, ease: "easeOut" as const }}
-            className="text-4xl md:text-6xl font-black tracking-tight text-foreground mb-5 leading-tight"
+            transition={{ duration: 0.5, delay: 0.07, ease: "easeOut" as const }}
+            className="text-3xl md:text-5xl font-black tracking-tight text-foreground mb-2 leading-tight"
           >
             격투기의 모든 것,{" "}
             <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
@@ -124,18 +125,26 @@ export default function HomePage() {
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.16, ease: "easeOut" as const }}
-            className="text-lg text-muted max-w-lg mx-auto leading-relaxed"
+            transition={{ duration: 0.5, delay: 0.14, ease: "easeOut" as const }}
+            className="text-sm text-muted max-w-sm mx-auto"
           >
             선수 정보 · 경기 일정 · GOAT 투표 · 커뮤니티
           </motion.p>
         </div>
       </section>
 
+      {/* ── 공지 띠 + 히어로 배너 ── */}
+      <section className="max-w-5xl mx-auto px-4 pb-8">
+        {/* 공지 한 줄 띠 */}
+        <NoticeBanner />
+        {/* 디시인사이드 스타일 배너 슬라이더 */}
+        <HeroBanner />
+      </section>
+
       {/* ── 퀵 네비게이션 ── */}
-      <section className="max-w-5xl mx-auto px-4 pb-12">
+      <section className="max-w-5xl mx-auto px-4 pb-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {NAV_ITEMS.map((item, i) => (
             <motion.div
