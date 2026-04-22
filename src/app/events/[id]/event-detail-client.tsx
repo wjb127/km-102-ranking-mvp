@@ -160,7 +160,7 @@ export default function EventDetailClient({ id }: Props) {
   const displayName = event?.nameKo || event?.name || "";
   const venueText = event?.venueKo || event?.venue;
 
-  const commentCategoryId = Number(id);
+  const eventIdNum = Number(id);
 
   return (
     <div className="min-h-screen bg-background">
@@ -311,7 +311,8 @@ export default function EventDetailClient({ id }: Props) {
                 transition={{ duration: 0.45, delay: 0.3, ease: "easeOut" as const }}
               >
                 <CommentSection
-                  categoryId={commentCategoryId}
+                  targetType="event"
+                  targetId={eventIdNum}
                   fingerprint={fingerprint}
                 />
               </motion.div>

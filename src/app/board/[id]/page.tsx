@@ -265,7 +265,8 @@ export default function BoardDetailPage() {
 
             {/* ── 댓글 섹션 ── */}
             <CommentSection
-              categoryId={post.id}
+              targetType="post"
+              targetId={post.id}
               fingerprint={fingerprint}
             />
 

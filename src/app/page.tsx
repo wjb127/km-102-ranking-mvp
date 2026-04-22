@@ -16,7 +16,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { MmaFighter, MmaEvent } from "@/lib/api/mma";
+import type { DbFighter, DbEventSummary } from "@/lib/mma-types";
 import { HeroBanner, NoticeBanner } from "@/components/hero-banner";
 
 // ── 타입 ──
@@ -60,27 +60,31 @@ function CardSkeleton() {
 
 // ── 메인 페이지 ──
 export default function HomePage() {
-  // 선수 TOP 3 (fallback 데이터 기반)
-  const { data: fightersData } = useSWR<{ data: MmaFighter[] }>(
-    "/api/fighters",
+  // 선수 TOP 3 (승수 기준)
+  const { data: fightersData } = useSWR<{ data: DbFighter[] }>(
+    "/api/mma-fighters",
     fetcher,
     { revalidateOnFocus: false }
   );
   const fighters = fightersData?.data ?? [];
-  // 승수 기준 정렬 → TOP 3
   const top3 = [...fighters]
-    .sort((a, b) => b.record_wins - a.record_wins)
+    .sort((a, b) => b.wins - a.wins)
     .slice(0, 3);
 
-  // 최근 이벤트
-  const { data: eventsData } = useSWR<{ data: MmaEvent[] }>(
-    "/api/events?year=2026",
+  // 예정 경기 (eventDate >= now)
+  const { data: eventsData } = useSWR<{ data: DbEventSummary[] }>(
+    "/api/mma-events?limit=200",
     fetcher,
     { revalidateOnFocus: false }
   );
   const events = eventsData?.data ?? [];
+  const now = Date.now();
   const upcomingEvents = events
-    .filter((e) => e.status === "upcoming")
+    .filter((e) => e.eventDate && new Date(e.eventDate).getTime() >= now)
+    .sort(
+      (a, b) =>
+        new Date(a.eventDate ?? 0).getTime() - new Date(b.eventDate ?? 0).getTime()
+    )
     .slice(0, 3);
 
   // 게시판 최신글
@@ -187,8 +191,10 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {top3.map((fighter, i) => {
               const medals = ["🥇", "🥈", "🥉"];
-              const total = fighter.record_wins + fighter.record_losses + fighter.record_draws;
-              const winRate = total > 0 ? Math.round((fighter.record_wins / total) * 100) : 0;
+              const total = fighter.wins + fighter.losses + fighter.draws;
+              const winRate = total > 0 ? Math.round((fighter.wins / total) * 100) : 0;
+              const displayName = fighter.fullNameKo || fighter.fullName;
+              const nick = fighter.nicknameKo || fighter.nickname;
               return (
                 <motion.div
                   key={fighter.id}
@@ -205,29 +211,29 @@ export default function HomePage() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm">{getFlag(fighter.nationality)}</span>
                             <h3 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                              {fighter.name}
+                              {displayName}
                             </h3>
                           </div>
-                          {fighter.nickname && (
-                            <p className="text-xs text-muted truncate">&quot;{fighter.nickname}&quot;</p>
+                          {nick && (
+                            <p className="text-xs text-muted truncate">&quot;{nick}&quot;</p>
                           )}
                         </div>
                         <div className="text-right shrink-0">
                           <div className="text-sm font-bold text-foreground">
-                            <span className="text-green-500">{fighter.record_wins}W</span>
+                            <span className="text-green-500">{fighter.wins}W</span>
                             {" - "}
-                            <span className="text-red-500">{fighter.record_losses}L</span>
-                            {fighter.record_draws > 0 && (
-                              <span className="text-muted"> - {fighter.record_draws}D</span>
+                            <span className="text-red-500">{fighter.losses}L</span>
+                            {fighter.draws > 0 && (
+                              <span className="text-muted"> - {fighter.draws}D</span>
                             )}
                           </div>
                           <p className="text-[11px] text-muted">승률 {winRate}%</p>
                         </div>
                       </div>
-                      {fighter.weight_class && (
+                      {fighter.weightClass && (
                         <div className="mt-2 flex items-center gap-2">
                           <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                            {fighter.weight_class}
+                            {fighter.weightClass}
                           </span>
                         </div>
                       )}
@@ -258,42 +264,51 @@ export default function HomePage() {
           <div className="space-y-3">{[0, 1].map((i) => <CardSkeleton key={i} />)}</div>
         ) : (
           <div className="space-y-3">
-            {upcomingEvents.map((event, i) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.06, ease: "easeOut" as const }}
-              >
-                <Link href={`/events/${event.id}`}>
-                  <div className="group flex items-center gap-4 rounded-xl border border-border bg-surface p-4 transition-all hover:border-primary/40">
-                    {/* 날짜 */}
-                    <div className="flex flex-col items-center justify-center rounded-lg bg-primary/10 px-3 py-2 min-w-[60px]">
-                      <span className="text-[10px] font-semibold text-primary uppercase">
-                        {new Date(event.date).toLocaleDateString("ko-KR", { month: "short" })}
-                      </span>
-                      <span className="text-xl font-black text-primary">
-                        {new Date(event.date).getDate()}
-                      </span>
+            {upcomingEvents.map((event, i) => {
+              const displayName = event.nameKo || event.name;
+              const venue = event.venueKo || event.venue;
+              const eventDate = event.eventDate ? new Date(event.eventDate) : null;
+              return (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.06, ease: "easeOut" as const }}
+                >
+                  <Link href={`/events/${event.id}`}>
+                    <div className="group flex items-center gap-4 rounded-xl border border-border bg-surface p-4 transition-all hover:border-primary/40">
+                      {/* 날짜 */}
+                      <div className="flex flex-col items-center justify-center rounded-lg bg-primary/10 px-3 py-2 min-w-[60px]">
+                        <span className="text-[10px] font-semibold text-primary uppercase">
+                          {eventDate
+                            ? eventDate.toLocaleDateString("ko-KR", { month: "short" })
+                            : "-"}
+                        </span>
+                        <span className="text-xl font-black text-primary">
+                          {eventDate ? eventDate.getDate() : "-"}
+                        </span>
+                      </div>
+                      {/* 정보 */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-foreground text-sm truncate group-hover:text-primary transition-colors">
+                          {displayName}
+                        </h3>
+                        <p className="text-xs text-muted mt-0.5">
+                          {[venue, event.country].filter(Boolean).join(" · ") || "-"}
+                        </p>
+                      </div>
+                      {/* 뱃지 */}
+                      {eventDate && (
+                        <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
+                          D-{Math.max(0, Math.ceil((eventDate.getTime() - Date.now()) / 86400000))}
+                        </span>
+                      )}
                     </div>
-                    {/* 정보 */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-foreground text-sm truncate group-hover:text-primary transition-colors">
-                        {event.name}
-                      </h3>
-                      <p className="text-xs text-muted mt-0.5">
-                        {[event.venue_name, event.venue_city].filter(Boolean).join(" · ")}
-                      </p>
-                    </div>
-                    {/* 뱃지 */}
-                    <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
-                      D-{Math.max(0, Math.ceil((new Date(event.date).getTime() - Date.now()) / 86400000))}
-                    </span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </section>

@@ -1,18 +1,29 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Send, Flag, AlertTriangle } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
-import type { MockComment } from "@/lib/mock-store";
 
 // ── 타입 ──
 
+export type CommentTarget = "post" | "fighter" | "event" | "fight";
+
 interface Props {
-  categoryId: number;
+  targetType: CommentTarget;
+  targetId: number;
   fingerprint: string;
+}
+
+interface MmaCommentDto {
+  id: number;
+  parentId: number | null;
+  nickname: string;
+  content: string;
+  likeCount: number;
+  createdAt: string;
 }
 
 const REPORT_REASONS = [
@@ -62,24 +73,43 @@ function timeAgo(dateStr: string): string {
 
 // ── 메인 컴포넌트 ──
 
-export default function CommentSection({ categoryId, fingerprint }: Props) {
+export default function CommentSection({ targetType, targetId, fingerprint }: Props) {
   const [nickname, setNickname] = useState("");
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // 신고 모달
-  const [reportTarget, setReportTarget] = useState<MockComment | null>(null);
+  const [reportTarget, setReportTarget] = useState<MmaCommentDto | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
 
-  // 댓글 목록 SWR (5초마다 폴링)
-  const { data, isLoading, mutate } = useSWR(
-    `/api/comments?categoryId=${categoryId}`,
+  // 로그인 시 닉네임 자동 채움
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        const json = await res.json();
+        const nick = json?.data?.nickname as string | undefined;
+        if (!cancelled && nick) setNickname(nick);
+      } catch {
+        /* noop */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // 댓글 목록 SWR (5초 폴링)
+  const apiUrl = `/api/mma-comments?targetType=${targetType}&targetId=${targetId}`;
+  const { data, isLoading, mutate } = useSWR<{ success: boolean; data: MmaCommentDto[] }>(
+    targetId > 0 ? apiUrl : null,
     fetcher,
     { refreshInterval: 5000, revalidateOnFocus: false }
   );
 
-  const comments: MockComment[] = data?.data ?? [];
+  const comments: MmaCommentDto[] = data?.data ?? [];
 
   // 댓글 작성
   const handleSubmit = useCallback(
@@ -89,19 +119,19 @@ export default function CommentSection({ categoryId, fingerprint }: Props) {
 
       setSubmitting(true);
       try {
-        const res = await fetch("/api/comments", {
+        const res = await fetch("/api/mma-comments", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            categoryId,
+            targetType,
+            targetId,
             nickname: nickname.trim(),
             content: content.trim(),
-            fingerprint,
           }),
         });
         if (!res.ok) {
-          const data = await res.json();
-          alert(data.error || "댓글 작성에 실패했습니다.");
+          const err = await res.json();
+          alert(err.error || "댓글 작성에 실패했습니다.");
           return;
         }
         setContent("");
@@ -112,7 +142,7 @@ export default function CommentSection({ categoryId, fingerprint }: Props) {
         setSubmitting(false);
       }
     },
-    [categoryId, nickname, content, fingerprint, submitting, mutate]
+    [targetType, targetId, nickname, content, submitting, mutate]
   );
 
   // 신고 처리
@@ -121,7 +151,7 @@ export default function CommentSection({ categoryId, fingerprint }: Props) {
 
     setReporting(true);
     try {
-      const res = await fetch("/api/comments/report", {
+      const res = await fetch("/api/mma-comments/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -130,12 +160,16 @@ export default function CommentSection({ categoryId, fingerprint }: Props) {
           fingerprint,
         }),
       });
-      const data = await res.json();
+      const result = await res.json();
       if (!res.ok) {
-        alert(data.error || "신고에 실패했습니다.");
+        alert(result.error || "신고에 실패했습니다.");
         return;
       }
-      alert(data.data?.hidden ? "신고가 접수되어 댓글이 숨김 처리되었습니다." : "신고가 접수되었습니다.");
+      alert(
+        result.data?.hidden
+          ? "신고가 접수되어 댓글이 숨김 처리되었습니다."
+          : "신고가 접수되었습니다."
+      );
       setReportTarget(null);
       setReportReason("");
       await mutate();
@@ -172,7 +206,7 @@ export default function CommentSection({ categoryId, fingerprint }: Props) {
             placeholder="댓글을 입력하세요..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            maxLength={300}
+            maxLength={500}
             className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none"
           />
           <button
@@ -189,7 +223,7 @@ export default function CommentSection({ categoryId, fingerprint }: Props) {
             <span className="hidden sm:inline">등록</span>
           </button>
         </div>
-        <p className="text-right text-xs text-muted">{content.length}/300</p>
+        <p className="text-right text-xs text-muted">{content.length}/500</p>
       </form>
 
       {/* 댓글 목록 */}
@@ -203,49 +237,41 @@ export default function CommentSection({ categoryId, fingerprint }: Props) {
       ) : (
         <div className="space-y-3">
           <AnimatePresence initial={false}>
-            {comments.map((comment) => {
-              const isMine = comment.writerFingerprint === fingerprint;
-              return (
-                <motion.div
-                  key={comment.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.25 }}
-                  className="group rounded-xl border border-border bg-surface p-4"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-foreground">
-                          {comment.nickname}
-                        </span>
-                        {isMine && (
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                            나
-                          </span>
-                        )}
-                        <span className="text-xs text-muted">
-                          {timeAgo(comment.createdAt)}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm leading-relaxed text-foreground/90">
-                        {comment.content}
-                      </p>
+            {comments.map((comment) => (
+              <motion.div
+                key={comment.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25 }}
+                className="group rounded-xl border border-border bg-surface p-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground">
+                        {comment.nickname}
+                      </span>
+                      <span className="text-xs text-muted">
+                        {timeAgo(comment.createdAt)}
+                      </span>
                     </div>
-
-                    {/* 신고 버튼 */}
-                    <button
-                      onClick={() => setReportTarget(comment)}
-                      className="shrink-0 rounded-lg p-1.5 text-muted/50 transition-all hover:bg-danger/10 hover:text-danger"
-                      aria-label="댓글 신고"
-                    >
-                      <Flag className="h-3.5 w-3.5" />
-                    </button>
+                    <p className="mt-1 text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                      {comment.content}
+                    </p>
                   </div>
-                </motion.div>
-              );
-            })}
+
+                  {/* 신고 버튼 */}
+                  <button
+                    onClick={() => setReportTarget(comment)}
+                    className="shrink-0 rounded-lg p-1.5 text-muted/50 transition-all hover:bg-danger/10 hover:text-danger"
+                    aria-label="댓글 신고"
+                  >
+                    <Flag className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
           </AnimatePresence>
         </div>
       )}

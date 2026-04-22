@@ -209,9 +209,7 @@ function FighterDetailClient({ id }: { id: string }) {
   const orgRecords = payload?.orgRecords ?? [];
   const recentFights = payload?.recentFights ?? [];
 
-  // 선수 댓글: mma_comments (targetType=fighter, targetId=fighter.id)
-  // 현재 CommentSection은 레거시 comments 테이블 사용 - 추후 교체 예정
-  const commentCategoryId = fighter ? 100000 + fighter.id : 0;
+  const fighterIdNum = fighter?.id ?? 0;
 
   if (error) {
     return (
@@ -375,7 +373,8 @@ function FighterDetailClient({ id }: { id: string }) {
                   transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" as const }}
                 >
                   <CommentSection
-                    categoryId={commentCategoryId}
+                    targetType="fighter"
+                    targetId={fighterIdNum}
                     fingerprint={fingerprint}
                   />
                 </motion.div>
