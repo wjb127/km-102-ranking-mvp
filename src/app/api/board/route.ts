@@ -1,24 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getBoardPosts, addBoardPost } from "@/lib/board-store";
+import { desc, eq } from "drizzle-orm";
+import { db } from "@/db";
+import { boardPosts } from "@/db/schema";
+import { rowToDto, toSlug, type BoardCategoryKo } from "@/lib/board-mappers";
 
-// ── GET /api/board?category= ──
+// ── GET /api/board?category=분석|토론|자유|전체 ──
 export async function GET(req: NextRequest) {
   const category = req.nextUrl.searchParams.get("category") || "전체";
-  const posts = getBoardPosts(category);
 
-  return NextResponse.json({
-    success: true,
-    data: posts,
-  });
+  const rows =
+    category === "전체"
+      ? await db
+          .select()
+          .from(boardPosts)
+          .where(eq(boardPosts.isDeleted, false))
+          .orderBy(desc(boardPosts.createdAt))
+      : await (async () => {
+          const slug = toSlug(category);
+          if (!slug) return [];
+          return db
+            .select()
+            .from(boardPosts)
+            .where(eq(boardPosts.category, slug))
+            .orderBy(desc(boardPosts.createdAt));
+        })();
+
+  const data = rows
+    .filter((r) => !r.isDeleted)
+    .map((r) =>
+      rowToDto({
+        id: r.id,
+        category: r.category,
+        title: r.title,
+        content: r.content,
+        authorNickname: r.authorNickname,
+        imageUrls: r.imageUrls,
+        viewCount: r.viewCount,
+        likeCount: r.likeCount,
+        commentCount: r.commentCount,
+        createdAt: r.createdAt,
+      })
+    );
+
+  return NextResponse.json({ success: true, data });
 }
 
 // ── POST /api/board ──
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { category, title, content, author } = body;
+    const { category, title, content, author } = body as {
+      category: BoardCategoryKo;
+      title: string;
+      content: string;
+      author: string;
+    };
 
-    // 유효성 검사
     const errors: string[] = [];
 
     if (!category || !["분석", "토론", "자유"].includes(category)) {
@@ -35,27 +72,40 @@ export async function POST(req: NextRequest) {
     }
 
     if (errors.length > 0) {
-      return NextResponse.json(
-        { success: false, error: errors.join(" ") },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: errors.join(" ") }, { status: 400 });
     }
 
-    const post = addBoardPost({
-      category,
-      title: title.trim(),
-      content: content.trim(),
-      author: author.trim(),
+    const slug = toSlug(category);
+    if (!slug) {
+      return NextResponse.json({ success: false, error: "잘못된 카테고리." }, { status: 400 });
+    }
+
+    const [inserted] = await db
+      .insert(boardPosts)
+      .values({
+        category: slug,
+        title: title.trim(),
+        content: content.trim(),
+        authorNickname: author.trim(),
+      })
+      .returning();
+
+    const dto = rowToDto({
+      id: inserted.id,
+      category: inserted.category,
+      title: inserted.title,
+      content: inserted.content,
+      authorNickname: inserted.authorNickname,
+      imageUrls: inserted.imageUrls,
+      viewCount: inserted.viewCount,
+      likeCount: inserted.likeCount,
+      commentCount: inserted.commentCount,
+      createdAt: inserted.createdAt,
     });
 
-    return NextResponse.json(
-      { success: true, data: post },
-      { status: 201 }
-    );
-  } catch {
-    return NextResponse.json(
-      { success: false, error: "잘못된 요청입니다." },
-      { status: 400 }
-    );
+    return NextResponse.json({ success: true, data: dto }, { status: 201 });
+  } catch (e) {
+    console.error("[POST /api/board]", e);
+    return NextResponse.json({ success: false, error: "잘못된 요청입니다." }, { status: 400 });
   }
 }
