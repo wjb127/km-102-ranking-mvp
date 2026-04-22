@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>MMA 분석 커뮤니티 웹사이트 개발 용역 계약서 (초안)</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+
   :root {
     --text: #111;
     --muted: #555;
@@ -298,6 +300,19 @@
     flex: 1;
     border-bottom: 1px solid var(--line);
     min-height: 22px;
+    position: relative;
+  }
+
+  .handwritten-sign {
+    font-family: "Nanum Pen Script", cursive;
+    font-size: 34px;
+    color: #0a1f6b;
+    line-height: 1;
+    position: absolute;
+    left: 8px;
+    bottom: 2px;
+    transform: rotate(-4deg);
+    letter-spacing: 2px;
   }
 
   .stamp-label {
@@ -403,7 +418,8 @@
     <div class="party">
       <h3>수행자 (을)</h3>
       <dl>
-        <dt>성명</dt><dd><span class="fill long"></span></dd>
+        <dt>상호</dt><dd>앱돌이공장 (개인사업자)</dd>
+        <dt>대표자</dt><dd>위승빈</dd>
         <dt>연락처</dt><dd><span class="fill long"></span></dd>
         <dt>이메일</dt><dd><span class="fill long"></span></dd>
         <dt>주소</dt><dd><span class="fill long"></span></dd>
@@ -454,10 +470,14 @@
     <div class="clause">
       <span class="clause-label">① 공통 포함 기능</span>
       <ul class="sub-list">
-        <li>역대 1위 투표 (GOAT 투표) 기능</li>
+        <li>역대 1위 투표 (GOAT 투표) 기능 — 선수 프로필 카드와 양방향 연동 (카드 클릭 시 상세 페이지 이동, 투표 결과는 선수별로 누적 표시)</li>
         <li>선수 검색 · 선수 프로필 페이지 · 선수별 댓글 기능</li>
+        <li>선수 전적 누적 관리 — 선수가 타 단체(UFC → ONE, Bellator 등)로 이적하는 경우 단체별 경기 기록을 분리하여 누적 관리</li>
+        <li>경기 결과 자동 반영 — 외부 API가 제공하는 무효 · 판정 번복 정보에 따라 선수 전적 자동 복귀 처리</li>
+        <li>관리자 페이지 수동 보정 기능 — 외부 API 오류 또는 누락에 대비하여 관리자가 경기 결과 · 전적을 직접 수정할 수 있는 2차 안전장치 제공</li>
+        <li>한국어 번역 기능 — 선수 프로필 · 경기 정보 등 외부 API 원문(영문) 데이터를 번역 API를 통해 한국어로 노출</li>
         <li>경기 일정 페이지 · 경기별 댓글 기능</li>
-        <li>게시판 기능 — 분석 · 토론 · 자유 카테고리 분류 및 전체 목록 통합 조회</li>
+        <li>게시판 기능 — 분석 · 토론 · 자유 카테고리 분류 및 전체 목록 통합 조회(필터링 포함)</li>
         <li>게시글 기본 기능 — 조회수, 추천, 사진 업로드 (Cloudinary 연동)</li>
         <li>회원가입 · 로그인 · 회원 간 1:1 쪽지 기능</li>
         <li>반응형 UI (모바일 · 태블릿 · 데스크탑 대응)</li>
@@ -539,7 +559,7 @@
     <div class="clause">
       <span class="clause-label">① 계약 금액</span>
       <div class="emphasis">
-        금 <strong>이백사십만원정 (₩2,400,000)</strong> (VAT 별도)
+        금 <strong>이백삼십만원정 (₩2,300,000)</strong> (VAT 별도)
       </div>
     </div>
 
@@ -549,26 +569,25 @@
         <thead>
           <tr>
             <th style="width: 22%;">구분</th>
-            <th style="width: 20%;">비율</th>
+            <th style="width: 22%;">금액</th>
             <th>지급 시점</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>계약금</td><td>50%</td><td>계약 체결 후 3영업일 이내</td></tr>
-          <tr><td>잔금</td><td>50%</td><td>최종 납품 및 갑의 검수 완료 후 3영업일 이내</td></tr>
+          <tr><td>1차 (계약금)</td><td>₩1,150,000 (50%)</td><td>계약 체결 후 3영업일 이내</td></tr>
+          <tr><td>2차 (잔금)</td><td>₩1,150,000 (50%)</td><td>최종 납품 및 갑의 검수 완료 후 3영업일 이내</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="clause">
-      <span class="clause-label">③ 입금 계좌</span>
+      <span class="clause-label">③ 지급 수단</span>
       <div class="emphasis">
-        <span class="fill long">은행명 · 계좌번호 · 예금주</span>
+        크몽(Kmong) 플랫폼을 통한 결제로 갈음한다. (1차 · 2차 각각 크몽 결제)
       </div>
-    </div>
-
-    <div class="clause">
-      <span class="clause-label">④ 갑은 입금 후 증빙을 을에게 통보한다.</span>
+      <div class="note">
+        ※ 별도 계좌 이체는 진행하지 아니하며, 크몽 결제 완료 내역으로 입금 증빙을 대체한다.
+      </div>
     </div>
   </section>
 
@@ -786,12 +805,13 @@
       <div class="signature-box">
         <div class="role">수 행 자 (을)</div>
         <dl class="sign-row">
-          <dt>성명</dt><dd></dd>
+          <dt>상호</dt><dd>앱돌이공장 (개인사업자)</dd>
+          <dt>대표자</dt><dd>위승빈</dd>
           <dt>연락처</dt><dd></dd>
           <dt>주소</dt><dd></dd>
         </dl>
         <div class="stamp-area">
-          <div class="stamp-line"></div>
+          <div class="stamp-line"><span class="handwritten-sign">위승빈</span></div>
           <div class="stamp-label">서명/인</div>
         </div>
       </div>
