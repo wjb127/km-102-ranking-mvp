@@ -39,6 +39,7 @@ export default function NavBar() {
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +60,30 @@ export default function NavBar() {
     };
     // pathname 변경 시 재조회 (로그인/로그아웃 후 새로고침 반영)
   }, [pathname]);
+
+  // 로그인 상태일 때만 미읽음 카운트 폴링 (60초 간격)
+  useEffect(() => {
+    if (!user) {
+      setUnread(0);
+      return;
+    }
+    let cancelled = false;
+    async function fetchUnread() {
+      try {
+        const res = await fetch("/api/messages/unread-count", { cache: "no-store" });
+        const json = await res.json();
+        if (!cancelled) setUnread(Number(json?.data?.count ?? 0));
+      } catch {
+        /* noop */
+      }
+    }
+    fetchUnread();
+    const timer = setInterval(fetchUnread, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [user, pathname]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -120,9 +145,14 @@ export default function NavBar() {
                 )}
                 <Link
                   href="/messages"
-                  className="px-2 py-1 text-xs text-muted hover:text-foreground"
+                  className="relative px-2 py-1 text-xs text-muted hover:text-foreground"
                 >
                   쪽지
+                  {unread > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
                 </Link>
                 <span className="text-xs text-foreground font-semibold flex items-center gap-1">
                   <User className="w-3.5 h-3.5" />
@@ -191,6 +221,17 @@ export default function NavBar() {
               <span className="text-muted">···</span>
             ) : user ? (
               <>
+                <Link
+                  href="/messages"
+                  className="relative px-2 py-0.5 text-muted border border-border rounded"
+                >
+                  쪽지
+                  {unread > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
+                </Link>
                 <span className="text-foreground font-semibold">{user.nickname}</span>
                 <button
                   onClick={handleLogout}

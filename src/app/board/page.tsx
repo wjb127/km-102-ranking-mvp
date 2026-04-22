@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -187,6 +187,28 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [loggedInNickname, setLoggedInNickname] = useState<string | null>(null);
+
+  // 로그인 상태 확인 → 글쓴이 자동 채움
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        const json = await res.json();
+        const nick = json?.data?.nickname as string | undefined;
+        if (!cancelled && nick) {
+          setLoggedInNickname(nick);
+          setAuthor(nick);
+        }
+      } catch {
+        /* 비로그인 — 기존 익명 입력 유지 */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -270,8 +292,13 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
             placeholder="ㅇㅇ"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
+            readOnly={!!loggedInNickname}
             maxLength={20}
-            className="w-full sm:w-36 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none"
+            title={loggedInNickname ? "로그인 닉네임 고정" : undefined}
+            className={cn(
+              "w-full sm:w-36 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none",
+              loggedInNickname && "cursor-not-allowed opacity-70"
+            )}
           />
         </div>
 
