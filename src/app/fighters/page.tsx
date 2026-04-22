@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Search, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { MmaFighter } from "@/lib/api/mma";
+import type { DbFighter } from "@/lib/mma-types";
 
 // ── SWR fetcher ──
 
@@ -70,17 +70,18 @@ function FighterCardSkeleton() {
 // ── 선수 카드 ──
 
 interface FighterCardProps {
-  fighter: MmaFighter;
+  fighter: DbFighter;
   index: number;
 }
 
 function FighterCard({ fighter, index }: FighterCardProps) {
-  const totalFights =
-    fighter.record_wins + fighter.record_losses + fighter.record_draws;
+  const totalFights = fighter.wins + fighter.losses + fighter.draws;
   const winRate =
-    totalFights > 0
-      ? Math.round((fighter.record_wins / totalFights) * 100)
-      : 0;
+    totalFights > 0 ? Math.round((fighter.wins / totalFights) * 100) : 0;
+
+  const displayName = fighter.fullNameKo || fighter.fullName;
+  const subName = fighter.fullNameKo ? fighter.fullName : null;
+  const nick = fighter.nicknameKo || fighter.nickname;
 
   return (
     <motion.div
@@ -103,57 +104,42 @@ function FighterCard({ fighter, index }: FighterCardProps) {
         >
           {/* 상단: 국기 + 이름 + 닉네임 */}
           <div className="flex items-start gap-3 mb-3">
-            <span className="text-2xl leading-none mt-0.5" aria-label={fighter.nationality ?? "국적"}>
+            <span
+              className="text-2xl leading-none mt-0.5"
+              aria-label={fighter.nationality ?? "국적"}
+            >
               {getFlag(fighter.nationality)}
             </span>
             <div className="min-w-0 flex-1">
               <h3 className="font-bold text-foreground text-base leading-snug group-hover:text-primary transition-colors truncate">
-                {fighter.name}
+                {displayName}
               </h3>
-              {fighter.nickname && (
-                <p className="text-xs text-muted truncate mt-0.5">
-                  &quot;{fighter.nickname}&quot;
-                </p>
+              {subName && (
+                <p className="text-[10px] text-muted/70 truncate">{subName}</p>
+              )}
+              {nick && (
+                <p className="text-xs text-muted truncate mt-0.5">&quot;{nick}&quot;</p>
               )}
             </div>
-            {/* 활동 상태 뱃지 */}
-            <span
-              className={cn(
-                "shrink-0 mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                fighter.active
-                  ? "bg-success/15 text-success border border-success/30"
-                  : "bg-muted/15 text-muted border border-border"
-              )}
-            >
-              {fighter.active ? "Active" : "Retired"}
-            </span>
           </div>
 
           {/* 전적 */}
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-sm font-bold text-success">
-              {fighter.record_wins}W
-            </span>
+            <span className="text-sm font-bold text-success">{fighter.wins}W</span>
             <span className="text-muted/40">-</span>
-            <span className="text-sm font-bold text-danger">
-              {fighter.record_losses}L
-            </span>
+            <span className="text-sm font-bold text-danger">{fighter.losses}L</span>
             <span className="text-muted/40">-</span>
-            <span className="text-sm font-bold text-muted">
-              {fighter.record_draws}D
-            </span>
+            <span className="text-sm font-bold text-muted">{fighter.draws}D</span>
             {totalFights > 0 && (
-              <span className="ml-auto text-xs text-muted">
-                승률 {winRate}%
-              </span>
+              <span className="ml-auto text-xs text-muted">승률 {winRate}%</span>
             )}
           </div>
 
           {/* 체급 */}
-          {fighter.weight_class && (
+          {fighter.weightClass && (
             <div className="flex items-center gap-1.5 pt-3 border-t border-border">
               <Users className="w-3.5 h-3.5 text-muted" />
-              <span className="text-xs text-muted">{fighter.weight_class}</span>
+              <span className="text-xs text-muted">{fighter.weightClass}</span>
             </div>
           )}
         </div>
@@ -179,10 +165,10 @@ export default function FightersPage() {
 
   // SWR 데이터 패칭
   const apiUrl = debouncedSearch
-    ? `/api/fighters?search=${encodeURIComponent(debouncedSearch)}`
-    : "/api/fighters";
+    ? `/api/mma-fighters?search=${encodeURIComponent(debouncedSearch)}`
+    : "/api/mma-fighters";
 
-  const { data, isLoading } = useSWR<{ success: boolean; data: MmaFighter[] }>(
+  const { data, isLoading } = useSWR<{ success: boolean; data: DbFighter[] }>(
     apiUrl,
     fetcher,
     { revalidateOnFocus: false }
@@ -245,7 +231,7 @@ export default function FightersPage() {
           <input
             ref={inputRef}
             type="text"
-            placeholder="선수 이름 또는 닉네임 검색..."
+            placeholder="선수 이름 또는 닉네임 검색 (한글/영문)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={cn(

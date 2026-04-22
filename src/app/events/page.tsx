@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Tag, ChevronRight, Flame, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { MmaEvent } from "@/lib/api/mma";
+import type { DbEventSummary } from "@/lib/mma-types";
 
 // ── 상수 ──
 
@@ -28,20 +28,22 @@ function formatDate(dateStr: string): string {
   return `${y}.${m}.${day}`;
 }
 
-// ── 상태 뱃지 ──
+function isUpcoming(dateStr: string | null): boolean {
+  if (!dateStr) return false;
+  return new Date(dateStr).getTime() >= Date.now();
+}
 
-function StatusBadge({ status }: { status: string }) {
-  const isUpcoming = status === "upcoming";
+function StatusBadge({ upcoming }: { upcoming: boolean }) {
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
-        isUpcoming
+        upcoming
           ? "bg-primary/15 text-primary border border-primary/30"
           : "bg-muted/15 text-muted border border-border"
       )}
     >
-      {isUpcoming ? (
+      {upcoming ? (
         <>
           <Flame className="h-3 w-3" />
           예정
@@ -76,12 +78,14 @@ function EventCardSkeleton() {
 // ── 이벤트 카드 ──
 
 interface EventCardProps {
-  event: MmaEvent;
+  event: DbEventSummary;
   index: number;
 }
 
 function EventCard({ event, index }: EventCardProps) {
-  const venue = [event.venue_city, event.venue_state].filter(Boolean).join(", ");
+  const venueText = event.venueKo || event.venue;
+  const upcoming = isUpcoming(event.eventDate);
+  const displayName = event.nameKo || event.name;
 
   return (
     <motion.div
@@ -102,40 +106,37 @@ function EventCard({ event, index }: EventCardProps) {
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              {/* 이벤트명 */}
               <h3 className="text-base font-bold text-foreground leading-snug group-hover:text-primary transition-colors duration-200 mb-2">
-                {event.name}
+                {displayName}
               </h3>
 
-              {/* 날짜 */}
-              <div className="flex items-center gap-1.5 text-sm text-muted mb-1">
-                <Calendar className="h-3.5 w-3.5 shrink-0" />
-                <span>{formatDate(event.date)}</span>
-              </div>
+              {event.eventDate && (
+                <div className="flex items-center gap-1.5 text-sm text-muted mb-1">
+                  <Calendar className="h-3.5 w-3.5 shrink-0" />
+                  <span>{formatDate(event.eventDate)}</span>
+                </div>
+              )}
 
-              {/* 장소 */}
-              {(event.venue_name || venue) && (
+              {(venueText || event.country) && (
                 <div className="flex items-center gap-1.5 text-sm text-muted mb-1.5">
                   <MapPin className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">
-                    {venue}
-                    {event.venue_name && ` · ${event.venue_name}`}
+                    {venueText ?? "-"}
+                    {event.country && ` · ${event.country}`}
                   </span>
                 </div>
               )}
 
-              {/* 리그 */}
-              {event.league && (
+              {(event.orgNameKo || event.orgName) && (
                 <div className="flex items-center gap-1.5 text-xs text-muted/80 mt-1">
                   <Tag className="h-3 w-3 shrink-0" />
-                  <span>{event.league.abbreviation}</span>
+                  <span>{event.orgNameKo || event.orgName}</span>
                 </div>
               )}
             </div>
 
-            {/* 우측: 상태 뱃지 + 화살표 */}
             <div className="flex flex-col items-end gap-2 shrink-0">
-              <StatusBadge status={event.status} />
+              <StatusBadge upcoming={upcoming} />
               <ChevronRight className="h-4 w-4 text-muted/40 group-hover:text-primary transition-colors" />
             </div>
           </div>
@@ -153,27 +154,35 @@ export default function EventsPage() {
     YEAR_TABS.includes(currentYear) ? currentYear : YEAR_TABS[YEAR_TABS.length - 1]
   );
 
-  const { data, isLoading, error } = useSWR<{ success: boolean; data: MmaEvent[] }>(
-    `/api/events?year=${selectedYear}`,
+  const { data, isLoading, error } = useSWR<{ success: boolean; data: DbEventSummary[] }>(
+    `/api/mma-events?limit=200`,
     fetcher,
     { revalidateOnFocus: false }
   );
 
-  const events = data?.data ?? [];
+  const events = useMemo(() => {
+    const all = data?.data ?? [];
+    return all.filter(
+      (e) => e.eventDate && new Date(e.eventDate).getFullYear() === selectedYear
+    );
+  }, [data, selectedYear]);
 
-  // 예정 이벤트를 먼저, 종료 이벤트 나중에
   const upcoming = events
-    .filter((e) => e.status === "upcoming")
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .filter((e) => isUpcoming(e.eventDate))
+    .sort(
+      (a, b) =>
+        new Date(a.eventDate ?? 0).getTime() - new Date(b.eventDate ?? 0).getTime()
+    );
   const completed = events
-    .filter((e) => e.status !== "upcoming")
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .filter((e) => !isUpcoming(e.eventDate))
+    .sort(
+      (a, b) =>
+        new Date(b.eventDate ?? 0).getTime() - new Date(a.eventDate ?? 0).getTime()
+    );
 
   return (
     <div className="min-h-screen bg-background">
-      {/* 히어로 */}
       <section className="relative overflow-hidden pt-16 pb-10 md:pt-20 md:pb-14">
-        {/* 배경 그라디언트 */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-primary/10 blur-3xl" />
           <div className="absolute top-[10%] right-[-15%] w-[50%] h-[50%] rounded-full bg-accent/8 blur-3xl" />
@@ -202,9 +211,7 @@ export default function EventsPage() {
         </div>
       </section>
 
-      {/* 콘텐츠 */}
       <section className="max-w-3xl mx-auto px-4 pb-24">
-        {/* 연도 탭 */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -227,7 +234,6 @@ export default function EventsPage() {
           ))}
         </motion.div>
 
-        {/* 로딩 스켈레톤 */}
         {isLoading && (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -236,14 +242,12 @@ export default function EventsPage() {
           </div>
         )}
 
-        {/* 에러 */}
         {error && !isLoading && (
           <div className="text-center py-16 text-muted">
             데이터를 불러오는 중 오류가 발생했습니다.
           </div>
         )}
 
-        {/* 데이터 없음 */}
         {!isLoading && !error && events.length === 0 && (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-surface/50 py-16 text-center">
             <Calendar className="h-8 w-8 text-muted/40" />
@@ -251,7 +255,6 @@ export default function EventsPage() {
           </div>
         )}
 
-        {/* 예정 이벤트 */}
         {!isLoading && upcoming.length > 0 && (
           <div className="mb-10">
             <motion.div
@@ -278,7 +281,6 @@ export default function EventsPage() {
           </div>
         )}
 
-        {/* 종료 이벤트 */}
         {!isLoading && completed.length > 0 && (
           <div>
             <motion.div

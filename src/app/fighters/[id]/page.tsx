@@ -6,17 +6,17 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
-  Shield,
   Ruler,
   Target,
   Globe,
   Dumbbell,
-  Activity,
+  Trophy,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getFingerprint } from "@/lib/fingerprint";
 import CommentSection from "@/components/comment-section";
-import type { MmaFighter } from "@/lib/api/mma";
+import type { DbFighter, DbOrgRecord, DbRecentFight } from "@/lib/mma-types";
 
 // ── SWR fetcher ──
 
@@ -25,13 +25,6 @@ const fetcher = (url: string) =>
     if (!res.ok) throw new Error("API 오류");
     return res.json();
   });
-
-// ── 인치 → cm 변환 ──
-
-function inchesToCm(inches: number | null): string {
-  if (inches === null) return "-";
-  return `${Math.round(inches * 2.54)}cm`;
-}
 
 // ── 국적 → 국기 이모지 ──
 
@@ -107,9 +100,7 @@ function StatCard({ label, value, color, bgColor }: StatCardProps) {
         bgColor
       )}
     >
-      <span className={cn("text-3xl md:text-4xl font-extrabold", color)}>
-        {value}
-      </span>
+      <span className={cn("text-3xl md:text-4xl font-extrabold", color)}>{value}</span>
       <span className="text-xs text-muted mt-1 font-medium">{label}</span>
     </motion.div>
   );
@@ -131,10 +122,70 @@ function InfoItem({ icon: Icon, label, value }: InfoItemProps) {
       </div>
       <div className="min-w-0">
         <p className="text-[11px] text-muted">{label}</p>
-        <p className="text-sm font-semibold text-foreground truncate">
-          {value}
+        <p className="text-sm font-semibold text-foreground truncate">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── 응답 타입 ──
+
+interface FighterDetailResponse {
+  fighter: DbFighter & {
+    heightCm: string | null;
+    reachCm: string | null;
+    bio: string | null;
+    bioKo: string | null;
+    birthDate: string | null;
+  };
+  orgRecords: DbOrgRecord[];
+  recentFights: DbRecentFight[];
+}
+
+// ── 단체별 전적 카드 ──
+
+function OrgRecordRow({ r }: { r: DbOrgRecord }) {
+  return (
+    <div className="flex items-center justify-between border-b border-border/60 py-2 text-xs">
+      <span className="font-semibold text-foreground">
+        {r.orgNameKo || r.orgName || "기타"}
+      </span>
+      <span className="text-muted">
+        <span className="text-success font-bold">{r.wins}</span>-
+        <span className="text-danger font-bold">{r.losses}</span>-
+        <span className="text-muted">{r.draws}</span>
+        {r.noContests > 0 && <span className="ml-1">(NC {r.noContests})</span>}
+        <span className="ml-2 text-[10px] text-muted">
+          KO {r.winsByKo} · SUB {r.winsBySub} · DEC {r.winsByDec}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+// ── 최근 경기 카드 ──
+
+function RecentFightRow({ f, fighterId }: { f: DbRecentFight; fighterId: number }) {
+  const isA = f.fighterAId === fighterId;
+  const isWin = f.winnerId != null && f.winnerId === fighterId;
+  const isLoss = f.winnerId != null && f.winnerId !== fighterId && f.result !== "DRAW";
+  const tag = isWin ? "W" : isLoss ? "L" : f.result === "DRAW" ? "D" : "-";
+  const tagColor = isWin ? "text-success" : isLoss ? "text-danger" : "text-muted";
+  void isA;
+  return (
+    <div className="flex items-center justify-between border-b border-border/60 py-2 text-xs">
+      <div className="min-w-0">
+        <p className="text-foreground truncate">
+          {f.eventNameKo || f.eventName || "-"}
+        </p>
+        <p className="text-[10px] text-muted truncate">
+          {f.eventDate ? new Date(f.eventDate).toLocaleDateString("ko-KR") : "-"}
+          {f.method && <> · {f.method}</>}
+          {f.round && <> · R{f.round}</>}
+          {f.time && <> {f.time}</>}
         </p>
       </div>
+      <span className={cn("ml-3 font-bold", tagColor)}>{tag}</span>
     </div>
   );
 }
@@ -144,41 +195,47 @@ function InfoItem({ icon: Icon, label, value }: InfoItemProps) {
 function FighterDetailClient({ id }: { id: string }) {
   const [fingerprint, setFingerprint] = useState("");
 
-  // fingerprint 로드
   useEffect(() => {
     getFingerprint().then(setFingerprint);
   }, []);
 
-  // 선수 데이터 패칭
   const { data, isLoading, error } = useSWR<{
     success: boolean;
-    data: MmaFighter;
-  }>(`/api/fighters/${id}`, fetcher, { revalidateOnFocus: false });
+    data: FighterDetailResponse;
+  }>(`/api/mma-fighters/${id}`, fetcher, { revalidateOnFocus: false });
 
-  const fighter = data?.data;
+  const payload = data?.data;
+  const fighter = payload?.fighter;
+  const orgRecords = payload?.orgRecords ?? [];
+  const recentFights = payload?.recentFights ?? [];
 
-  // 댓글용 categoryId — 선수 ID에 오프셋을 줘서 카테고리 투표 댓글과 충돌 방지
+  // 선수 댓글: mma_comments (targetType=fighter, targetId=fighter.id)
+  // 현재 CommentSection은 레거시 comments 테이블 사용 - 추후 교체 예정
   const commentCategoryId = fighter ? 100000 + fighter.id : 0;
 
   if (error) {
     return (
       <div className="flex flex-col items-center gap-3 py-20 text-center">
-        <p className="text-muted text-sm">
-          선수 정보를 불러오는 중 오류가 발생했습니다.
-        </p>
-        <Link
-          href="/fighters"
-          className="text-sm text-primary hover:underline"
-        >
+        <p className="text-muted text-sm">선수 정보를 불러오는 중 오류가 발생했습니다.</p>
+        <Link href="/fighters" className="text-sm text-primary hover:underline">
           선수 목록으로 돌아가기
         </Link>
       </div>
     );
   }
 
+  const totalWins = fighter?.wins ?? 0;
+  const totalLosses = fighter?.losses ?? 0;
+  const totalDraws = fighter?.draws ?? 0;
+  const totalNC = fighter?.noContests ?? 0;
+
+  const displayName = fighter?.fullNameKo || fighter?.fullName || "";
+  const subName = fighter?.fullNameKo ? fighter.fullName : null;
+  const nick = fighter?.nicknameKo || fighter?.nickname;
+  const nationalityDisplay = fighter?.nationalityKo || fighter?.nationality;
+
   return (
     <div className="min-h-screen bg-background">
-      {/* 헤더 영역 */}
       <section className="relative overflow-hidden pt-12 pb-6 md:pt-16 md:pb-10">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/8 blur-3xl" />
@@ -186,7 +243,6 @@ function FighterDetailClient({ id }: { id: string }) {
         </div>
 
         <div className="relative z-10 max-w-3xl mx-auto px-4">
-          {/* 뒤로가기 */}
           <Link
             href="/fighters"
             className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors mb-6"
@@ -211,123 +267,112 @@ function FighterDetailClient({ id }: { id: string }) {
                     {getFlag(fighter.nationality)}
                   </span>
                   <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">
-                    {fighter.name}
+                    {displayName}
                   </h1>
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                      fighter.active
-                        ? "bg-success/15 text-success border border-success/30"
-                        : "bg-muted/15 text-muted border border-border"
-                    )}
-                  >
-                    {fighter.active ? "Active" : "Retired"}
-                  </span>
                 </div>
-                {fighter.nickname && (
-                  <p className="text-muted text-base md:text-lg font-medium ml-[calc(1.875rem+0.75rem)]">
-                    &quot;{fighter.nickname}&quot;
+                {subName && (
+                  <p className="text-xs text-muted/70 ml-[calc(1.875rem+0.75rem)]">
+                    {subName}
+                  </p>
+                )}
+                {nick && (
+                  <p className="text-muted text-base md:text-lg font-medium ml-[calc(1.875rem+0.75rem)] mt-0.5">
+                    &quot;{nick}&quot;
                   </p>
                 )}
               </motion.div>
 
-              {/* 전적 통계 */}
+              {/* 전적 통계 (합산) */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.5,
-                  delay: 0.1,
-                  ease: "easeOut" as const,
-                }}
+                transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" as const }}
                 className="mb-6"
               >
-                <h2 className="text-sm font-semibold text-muted mb-3">전적</h2>
+                <h2 className="text-sm font-semibold text-muted mb-3">
+                  전적 (전체 합산)
+                </h2>
                 <div className="grid grid-cols-3 gap-3">
-                  <StatCard
-                    label="승리"
-                    value={fighter.record_wins}
-                    color="text-success"
-                    bgColor="bg-success/5"
-                  />
-                  <StatCard
-                    label="패배"
-                    value={fighter.record_losses}
-                    color="text-danger"
-                    bgColor="bg-danger/5"
-                  />
-                  <StatCard
-                    label="무승부"
-                    value={fighter.record_draws}
-                    color="text-muted"
-                    bgColor="bg-surface"
-                  />
+                  <StatCard label="승리" value={totalWins} color="text-success" bgColor="bg-success/5" />
+                  <StatCard label="패배" value={totalLosses} color="text-danger" bgColor="bg-danger/5" />
+                  <StatCard label="무승부" value={totalDraws} color="text-muted" bgColor="bg-surface" />
                 </div>
-                {fighter.record_no_contests > 0 && (
-                  <p className="text-xs text-muted mt-2 text-center">
-                    무효 경기: {fighter.record_no_contests}
-                  </p>
+                {totalNC > 0 && (
+                  <p className="text-xs text-muted mt-2 text-center">무효 경기: {totalNC}</p>
                 )}
               </motion.div>
+
+              {/* 단체별 전적 */}
+              {orgRecords.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" as const }}
+                  className="mb-6 rounded-xl border border-border bg-surface p-4"
+                >
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Trophy className="w-4 h-4 text-primary" />
+                    <h2 className="text-sm font-semibold text-foreground">단체별 전적</h2>
+                  </div>
+                  {orgRecords.map((r) => (
+                    <OrgRecordRow key={r.id} r={r} />
+                  ))}
+                </motion.div>
+              )}
 
               {/* 선수 정보 그리드 */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.5,
-                  delay: 0.2,
-                  ease: "easeOut" as const,
-                }}
+                transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" as const }}
                 className="mb-10"
               >
-                <h2 className="text-sm font-semibold text-muted mb-3">
-                  선수 정보
-                </h2>
+                <h2 className="text-sm font-semibold text-muted mb-3">선수 정보</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  <InfoItem
-                    icon={Dumbbell}
-                    label="체급"
-                    value={fighter.weight_class ?? "-"}
-                  />
-                  <InfoItem
-                    icon={Globe}
-                    label="국적"
-                    value={fighter.nationality ?? "-"}
-                  />
+                  <InfoItem icon={Dumbbell} label="체급" value={fighter.weightClass ?? "-"} />
+                  <InfoItem icon={Globe} label="국적" value={nationalityDisplay ?? "-"} />
                   <InfoItem
                     icon={Ruler}
                     label="신장"
-                    value={inchesToCm(fighter.height_inches)}
+                    value={fighter.heightCm ? `${fighter.heightCm}cm` : "-"}
                   />
                   <InfoItem
                     icon={Target}
                     label="리치"
-                    value={inchesToCm(fighter.reach_inches)}
-                  />
-                  <InfoItem
-                    icon={Shield}
-                    label="스탠스"
-                    value={fighter.stance ?? "-"}
-                  />
-                  <InfoItem
-                    icon={Activity}
-                    label="활동 상태"
-                    value={fighter.active ? "현역" : "은퇴"}
+                    value={fighter.reachCm ? `${fighter.reachCm}cm` : "-"}
                   />
                 </div>
+                {fighter.bioKo && (
+                  <div className="mt-4 rounded-xl border border-border bg-surface p-4 text-sm text-foreground whitespace-pre-wrap">
+                    {fighter.bioKo}
+                  </div>
+                )}
               </motion.div>
 
-              {/* 댓글 섹션 */}
+              {/* 최근 경기 */}
+              {recentFights.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" as const }}
+                  className="mb-10 rounded-xl border border-border bg-surface p-4"
+                >
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    <h2 className="text-sm font-semibold text-foreground">최근 경기</h2>
+                  </div>
+                  {recentFights.map((f) => (
+                    <RecentFightRow key={f.id} f={f} fighterId={fighter.id} />
+                  ))}
+                </motion.div>
+              )}
+
+              {/* 댓글 섹션 (레거시 comments) */}
               {fingerprint && (
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.5,
-                    delay: 0.3,
-                    ease: "easeOut" as const,
-                  }}
+                  transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" as const }}
                 >
                   <CommentSection
                     categoryId={commentCategoryId}
@@ -342,8 +387,6 @@ function FighterDetailClient({ id }: { id: string }) {
     </div>
   );
 }
-
-// ── 페이지 컴포넌트 ──
 
 export default function FighterDetailPage({
   params,

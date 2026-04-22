@@ -12,11 +12,13 @@ import {
   Flame,
   Clock,
   Building2,
+  Swords,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getFingerprint } from "@/lib/fingerprint";
 import CommentSection from "@/components/comment-section";
-import type { MmaEvent } from "@/lib/api/mma";
+import type { DbEventSummary, DbFightCard } from "@/lib/mma-types";
 
 // ── 유틸 ──
 
@@ -31,10 +33,14 @@ function formatDate(dateStr: string): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  // 요일
   const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
   const weekday = weekdays[d.getDay()];
   return `${y}.${m}.${day} (${weekday})`;
+}
+
+function isUpcoming(dateStr: string | null): boolean {
+  if (!dateStr) return false;
+  return new Date(dateStr).getTime() >= Date.now();
 }
 
 // ── 스켈레톤 ──
@@ -53,38 +59,111 @@ function DetailSkeleton() {
   );
 }
 
+// ── 파이트 카드 로우 ──
+
+function FightRow({ f }: { f: DbFightCard }) {
+  const aName = f.fighterANameKo || f.fighterAName || "-";
+  const bName = f.fighterBNameKo || f.fighterBName || "-";
+  const winnerA = f.winnerId != null && f.winnerId === f.fighterAId;
+  const winnerB = f.winnerId != null && f.winnerId === f.fighterBId;
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border p-3.5",
+        f.isMainEvent
+          ? "border-primary/40 bg-primary/5"
+          : f.isTitleFight
+            ? "border-accent/40 bg-accent/5"
+            : "border-border bg-surface"
+      )}
+    >
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <div className="flex items-center gap-1.5">
+          {f.isMainEvent && (
+            <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+              MAIN
+            </span>
+          )}
+          {f.isTitleFight && (
+            <span className="text-[10px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+              <Crown className="w-2.5 h-2.5" />
+              타이틀
+            </span>
+          )}
+          {f.weightClass && (
+            <span className="text-[10px] text-muted">{f.weightClass}</span>
+          )}
+        </div>
+        {f.result && f.method && (
+          <span className="text-[10px] text-muted">
+            {f.method}
+            {f.round && ` · R${f.round}`}
+            {f.time && ` ${f.time}`}
+          </span>
+        )}
+      </div>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <Link
+          href={`/fighters/${f.fighterAId}`}
+          className={cn(
+            "text-sm font-semibold truncate text-right hover:text-primary transition-colors",
+            winnerA ? "text-foreground" : "text-muted"
+          )}
+        >
+          {aName}
+          {winnerA && <span className="ml-1 text-success text-xs">W</span>}
+        </Link>
+        <Swords className="w-3.5 h-3.5 text-muted/40" />
+        <Link
+          href={`/fighters/${f.fighterBId}`}
+          className={cn(
+            "text-sm font-semibold truncate hover:text-primary transition-colors",
+            winnerB ? "text-foreground" : "text-muted"
+          )}
+        >
+          {bName}
+          {winnerB && <span className="ml-1 text-success text-xs">W</span>}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 // ── 메인 컴포넌트 ──
 
 interface Props {
   id: string;
 }
 
+interface EventDetailResponse {
+  event: DbEventSummary;
+  card: DbFightCard[];
+}
+
 export default function EventDetailClient({ id }: Props) {
   const [fingerprint, setFingerprint] = useState("");
 
-  // fingerprint 가져오기
   useEffect(() => {
     getFingerprint().then(setFingerprint);
   }, []);
 
-  const { data, isLoading, error } = useSWR<{ success: boolean; data: MmaEvent }>(
-    `/api/events/${id}`,
-    fetcher,
-    { revalidateOnFocus: false }
-  );
+  const { data, isLoading, error } = useSWR<{
+    success: boolean;
+    data: EventDetailResponse;
+  }>(`/api/mma-events/${id}`, fetcher, { revalidateOnFocus: false });
 
-  const event = data?.data;
-  const isUpcoming = event?.status === "upcoming";
-  const venue = event
-    ? [event.venue_city, event.venue_state].filter(Boolean).join(", ")
-    : "";
+  const payload = data?.data;
+  const event = payload?.event;
+  const card = payload?.card ?? [];
+  const upcoming = isUpcoming(event?.eventDate ?? null);
+  const displayName = event?.nameKo || event?.name || "";
+  const venueText = event?.venueKo || event?.venue;
 
-  // 댓글용 categoryId — 이벤트 id를 숫자로 변환
   const commentCategoryId = Number(id);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* 상단 내비게이션 */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
           <Link
@@ -98,17 +177,14 @@ export default function EventDetailClient({ id }: Props) {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8 pb-24">
-        {/* 로딩 */}
         {isLoading && <DetailSkeleton />}
 
-        {/* 에러 */}
         {error && !isLoading && (
           <div className="text-center py-16 text-muted">
             이벤트 정보를 불러올 수 없습니다.
           </div>
         )}
 
-        {/* 이벤트 정보 */}
         {event && !isLoading && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -116,18 +192,17 @@ export default function EventDetailClient({ id }: Props) {
             transition={{ duration: 0.5, ease: "easeOut" as const }}
             className="space-y-8"
           >
-            {/* 제목 + 상태 */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
-                    isUpcoming
+                    upcoming
                       ? "bg-primary/15 text-primary border border-primary/30"
                       : "bg-muted/15 text-muted border border-border"
                   )}
                 >
-                  {isUpcoming ? (
+                  {upcoming ? (
                     <>
                       <Flame className="h-3 w-3" />
                       예정
@@ -139,41 +214,40 @@ export default function EventDetailClient({ id }: Props) {
                     </>
                   )}
                 </span>
-                {event.league && (
+                {(event.orgNameKo || event.orgName) && (
                   <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold bg-accent/15 text-accent border border-accent/30">
                     <Tag className="h-3 w-3" />
-                    {event.league.abbreviation}
+                    {event.orgNameKo || event.orgName}
                   </span>
                 )}
               </div>
 
               <h1 className="text-2xl md:text-3xl font-extrabold text-foreground leading-tight">
-                {event.name}
+                {displayName}
               </h1>
             </div>
 
-            {/* 상세 정보 카드 */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.1, ease: "easeOut" as const }}
               className="rounded-2xl border border-border bg-surface p-5 space-y-4"
             >
-              {/* 날짜 */}
-              <div className="flex items-start gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
-                  <Calendar className="h-5 w-5 text-primary" />
+              {event.eventDate && (
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted mb-0.5">일시</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {formatDate(event.eventDate)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted mb-0.5">일시</p>
-                  <p className="text-sm font-semibold text-foreground">
-                    {formatDate(event.date)}
-                  </p>
-                </div>
-              </div>
+              )}
 
-              {/* 장소 */}
-              {(event.venue_name || venue) && (
+              {(venueText || event.country) && (
                 <div className="flex items-start gap-3">
                   <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 shrink-0">
                     <MapPin className="h-5 w-5 text-accent" />
@@ -181,60 +255,55 @@ export default function EventDetailClient({ id }: Props) {
                   <div>
                     <p className="text-xs text-muted mb-0.5">장소</p>
                     <p className="text-sm font-semibold text-foreground">
-                      {venue}
+                      {venueText ?? "-"}
                     </p>
-                    {event.venue_name && (
-                      <p className="text-xs text-muted mt-0.5">
-                        {event.venue_name}
-                      </p>
+                    {event.country && (
+                      <p className="text-xs text-muted mt-0.5">{event.country}</p>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* 리그 */}
-              {event.league && (
+              {(event.orgNameKo || event.orgName) && (
                 <div className="flex items-start gap-3">
                   <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted/10 border border-border shrink-0">
                     <Building2 className="h-5 w-5 text-muted" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted mb-0.5">리그</p>
+                    <p className="text-xs text-muted mb-0.5">단체</p>
                     <p className="text-sm font-semibold text-foreground">
-                      {event.league.name}
+                      {event.orgNameKo || event.orgName}
                     </p>
-                    <p className="text-xs text-muted mt-0.5">
-                      {event.league.abbreviation}
-                    </p>
+                    {event.orgSlug && (
+                      <p className="text-xs text-muted mt-0.5 uppercase">{event.orgSlug}</p>
+                    )}
                   </div>
                 </div>
               )}
             </motion.div>
 
-            {/* 장소 플레이스홀더 (지도/이미지 대용) */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.2, ease: "easeOut" as const }}
-              className="rounded-2xl border border-border bg-surface overflow-hidden"
-            >
-              <div className="flex items-center justify-center h-48 bg-gradient-to-br from-surface via-background to-surface">
-                <div className="text-center">
-                  <MapPin className="h-10 w-10 text-muted/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted/50">
-                    {event.venue_name ?? "경기장 정보"}
-                  </p>
-                  {venue && (
-                    <p className="text-xs text-muted/40 mt-0.5">{venue}</p>
-                  )}
+            {card.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.15, ease: "easeOut" as const }}
+                className="space-y-3"
+              >
+                <h2 className="text-sm font-semibold text-muted flex items-center gap-1.5">
+                  <Swords className="w-4 h-4" />
+                  파이트 카드
+                  <span className="text-xs font-normal text-muted/70">({card.length})</span>
+                </h2>
+                <div className="space-y-2">
+                  {card.map((f) => (
+                    <FightRow key={f.id} f={f} />
+                  ))}
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
 
-            {/* 구분선 */}
             <div className="border-t border-border" />
 
-            {/* 댓글 섹션 */}
             {fingerprint && (
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
