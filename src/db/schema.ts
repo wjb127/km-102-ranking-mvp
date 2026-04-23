@@ -183,12 +183,21 @@ export const fighters = pgTable(
     imageUrl: text("image_url"),
     bio: text("bio"),
     bioKo: text("bio_ko"),
+    careerWins: integer("career_wins").notNull().default(0),
+    careerLosses: integer("career_losses").notNull().default(0),
+    careerDraws: integer("career_draws").notNull().default(0),
+    careerNoContests: integer("career_no_contests").notNull().default(0),
+    isActive: boolean("is_active").notNull().default(true),
+    weightLbs: integer("weight_lbs"),
+    stance: varchar("stance", { length: 50 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("idx_fighters_full_name").on(t.fullName),
     index("idx_fighters_weight_class").on(t.weightClass),
+    index("idx_fighters_career_wins").on(t.careerWins),
+    index("idx_fighters_active").on(t.isActive),
   ]
 );
 

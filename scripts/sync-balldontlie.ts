@@ -148,28 +148,45 @@ async function syncFighters() {
 
     for (const f of res.data) {
       const birthDate = f.date_of_birth ? f.date_of_birth.slice(0, 10) : null;
+      const fullName =
+        f.name || `${f.first_name ?? ""} ${f.last_name ?? ""}`.trim() || `fighter-${f.id}`;
+      const values = {
+        externalId: f.id,
+        fullName,
+        nickname: f.nickname,
+        weightClass: f.weight_class?.name ?? null,
+        nationality: f.nationality,
+        birthDate,
+        heightCm: inchToCm(f.height_inches),
+        reachCm: inchToCm(f.reach_inches),
+        careerWins: f.record_wins ?? 0,
+        careerLosses: f.record_losses ?? 0,
+        careerDraws: f.record_draws ?? 0,
+        careerNoContests: f.record_no_contests ?? 0,
+        isActive: f.active ?? true,
+        weightLbs: f.weight_lbs ?? null,
+        stance: f.stance ?? null,
+      };
       await db
         .insert(fighters)
-        .values({
-          externalId: f.id,
-          fullName: f.name || `${f.first_name ?? ""} ${f.last_name ?? ""}`.trim() || `fighter-${f.id}`,
-          nickname: f.nickname,
-          weightClass: f.weight_class?.name ?? null,
-          nationality: f.nationality,
-          birthDate,
-          heightCm: inchToCm(f.height_inches),
-          reachCm: inchToCm(f.reach_inches),
-        })
+        .values(values)
         .onConflictDoUpdate({
           target: fighters.externalId,
           set: {
-            fullName: f.name || `${f.first_name ?? ""} ${f.last_name ?? ""}`.trim() || `fighter-${f.id}`,
-            nickname: f.nickname,
-            weightClass: f.weight_class?.name ?? null,
-            nationality: f.nationality,
-            birthDate,
-            heightCm: inchToCm(f.height_inches),
-            reachCm: inchToCm(f.reach_inches),
+            fullName: values.fullName,
+            nickname: values.nickname,
+            weightClass: values.weightClass,
+            nationality: values.nationality,
+            birthDate: values.birthDate,
+            heightCm: values.heightCm,
+            reachCm: values.reachCm,
+            careerWins: values.careerWins,
+            careerLosses: values.careerLosses,
+            careerDraws: values.careerDraws,
+            careerNoContests: values.careerNoContests,
+            isActive: values.isActive,
+            weightLbs: values.weightLbs,
+            stance: values.stance,
             updatedAt: new Date(),
           },
         });

@@ -11,6 +11,7 @@ export interface DbFighter {
   nationality: string | null;
   nationalityKo: string | null;
   imageUrl: string | null;
+  isActive?: boolean;
   wins: number;
   losses: number;
   draws: number;

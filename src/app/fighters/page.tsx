@@ -1,12 +1,38 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Search, Users, X } from "lucide-react";
+import { Search, Users, X, Loader2, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DbFighter } from "@/lib/mma-types";
+
+const PAGE_SIZE = 60;
+
+// 표준 체급 (UFC 기준 + 유니섹스 포함)
+const WEIGHT_CLASSES = [
+  "Strawweight",
+  "Flyweight",
+  "Bantamweight",
+  "Featherweight",
+  "Lightweight",
+  "Welterweight",
+  "Middleweight",
+  "Light Heavyweight",
+  "Heavyweight",
+  "Openweight",
+  "Catchweight",
+] as const;
+
+const SORT_OPTIONS = [
+  { value: "name", label: "이름순" },
+  { value: "wins", label: "승수 많은순" },
+  { value: "winrate", label: "승률 높은순" },
+  { value: "fights", label: "경기 많은순" },
+] as const;
+
+type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 
 // ── SWR fetcher ──
 
@@ -153,6 +179,9 @@ function FighterCard({ fighter, index }: FighterCardProps) {
 export default function FightersPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sort, setSort] = useState<SortValue>("wins");
+  const [weight, setWeight] = useState<string>("");
+  const [activeOnly, setActiveOnly] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 디바운스 (500ms)
@@ -163,18 +192,31 @@ export default function FightersPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // SWR 데이터 패칭
-  const apiUrl = debouncedSearch
-    ? `/api/mma-fighters?search=${encodeURIComponent(debouncedSearch)}`
-    : "/api/mma-fighters";
+  // SWR Infinite: offset 기반 페이지네이션 + 필터/정렬
+  const getKey = (pageIndex: number, previousPageData: { data: DbFighter[]; total: number } | null) => {
+    if (previousPageData && previousPageData.data.length === 0) return null;
+    const offset = pageIndex * PAGE_SIZE;
+    const params = new URLSearchParams({
+      limit: String(PAGE_SIZE),
+      offset: String(offset),
+      sort,
+    });
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (weight) params.set("weight", weight);
+    if (activeOnly) params.set("active", "1");
+    return `/api/mma-fighters?${params.toString()}`;
+  };
 
-  const { data, isLoading } = useSWR<{ success: boolean; data: DbFighter[] }>(
-    apiUrl,
-    fetcher,
-    { revalidateOnFocus: false }
-  );
+  const { data, isLoading, size, setSize } = useSWRInfinite<{
+    success: boolean;
+    data: DbFighter[];
+    total: number;
+  }>(getKey, fetcher, { revalidateOnFocus: false, revalidateFirstPage: false });
 
-  const fighters = data?.data ?? [];
+  const fighters = data ? data.flatMap((page) => page.data) : [];
+  const total = data?.[0]?.total ?? 0;
+  const hasMore = fighters.length < total;
+  const isLoadingMore = isLoading || (size > 0 && data && typeof data[size - 1] === "undefined");
 
   return (
     <div className="min-h-screen bg-background">
@@ -255,12 +297,80 @@ export default function FightersPage() {
           )}
         </motion.div>
 
+        {/* 정렬 + 필터 */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" as const }}
+          className="flex flex-wrap items-center gap-2 mb-6"
+        >
+          <div className="flex items-center gap-1.5 text-xs text-muted pr-1">
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>필터</span>
+          </div>
+
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortValue)}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer"
+          >
+            <option value="">전체 체급</option>
+            {WEIGHT_CLASSES.map((wc) => (
+              <option key={wc} value={wc}>
+                {wc}
+              </option>
+            ))}
+          </select>
+
+          <label
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium cursor-pointer transition-colors",
+              activeOnly
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-surface text-muted hover:text-foreground"
+            )}
+          >
+            <input
+              type="checkbox"
+              checked={activeOnly}
+              onChange={(e) => setActiveOnly(e.target.checked)}
+              className="sr-only"
+            />
+            <span>{activeOnly ? "✓ " : ""}현역만</span>
+          </label>
+
+          {(weight || !activeOnly || sort !== "wins") && (
+            <button
+              onClick={() => {
+                setSort("wins");
+                setWeight("");
+                setActiveOnly(true);
+              }}
+              className="ml-auto text-xs text-muted hover:text-foreground underline-offset-2 hover:underline transition-colors"
+            >
+              필터 초기화
+            </button>
+          )}
+        </motion.div>
+
         {/* 결과 카운트 */}
         {!isLoading && (
           <p className="text-xs text-muted mb-4">
             {debouncedSearch
-              ? `"${debouncedSearch}" 검색 결과 ${fighters.length}명`
-              : `전체 ${fighters.length}명`}
+              ? `"${debouncedSearch}" 검색 결과 ${total}명 (표시 ${fighters.length}명)`
+              : `전체 ${total}명 (표시 ${fighters.length}명)`}
           </p>
         )}
 
@@ -281,11 +391,35 @@ export default function FightersPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {fighters.map((fighter, i) => (
-              <FighterCard key={fighter.id} fighter={fighter} index={i} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {fighters.map((fighter, i) => (
+                <FighterCard key={fighter.id} fighter={fighter} index={i} />
+              ))}
+            </div>
+            {hasMore && (
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={() => setSize(size + 1)}
+                  disabled={isLoadingMore}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-6 py-3 text-sm font-semibold",
+                    "hover:border-primary/40 hover:text-primary transition-colors",
+                    "disabled:opacity-50 disabled:cursor-not-allowed"
+                  )}
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      불러오는 중…
+                    </>
+                  ) : (
+                    <>더 보기 ({total - fighters.length}명 남음)</>
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
     </div>
