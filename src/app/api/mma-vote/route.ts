@@ -48,14 +48,14 @@ const CATEGORIES: Record<string, CategoryConfig> = {
       { slugId: "lw-khabib",   externalId: 2001, name: "Khabib Nurmagomedov", baseCount: 3456 },
       { slugId: "lw-oliveira", externalId: 2008, name: "Charles Oliveira",    baseCount: 1234 },
       { slugId: "lw-bjpenn",   externalId: 2009, name: "BJ Penn",             baseCount: 876 },
-      { slugId: "lw-conor",    externalId: 1010, name: "Conor McGregor",      baseCount: 2109 },
+      { slugId: "lw-conor",    externalId: 6592, name: "Conor McGregor",      baseCount: 2109 },
     ],
   },
   "knockout-artist": {
     label: "KO 아티스트",
     description: "최고의 KO 아티스트는?",
     fighters: [
-      { slugId: "ko-conor",    externalId: 1010, name: "Conor McGregor",    baseCount: 2345 },
+      { slugId: "ko-conor",    externalId: 6592, name: "Conor McGregor",    baseCount: 2345 },
       { slugId: "ko-lewis",    externalId: 2010, name: "Derrick Lewis",     baseCount: 1567 },
       { slugId: "ko-hunt",     externalId: 2011, name: "Mark Hunt",         baseCount: 1890 },
       { slugId: "ko-ngannou",  externalId: 2012, name: "Francis Ngannou",   baseCount: 2678 },

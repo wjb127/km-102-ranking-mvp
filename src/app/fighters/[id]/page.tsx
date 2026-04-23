@@ -348,22 +348,24 @@ function FighterDetailClient({ id }: { id: string }) {
               </motion.div>
 
               {/* 최근 경기 */}
-              {recentFights.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" as const }}
-                  className="mb-10 rounded-xl border border-border bg-surface p-4"
-                >
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    <h2 className="text-sm font-semibold text-foreground">최근 경기</h2>
-                  </div>
-                  {recentFights.map((f) => (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" as const }}
+                className="mb-10 rounded-xl border border-border bg-surface p-4"
+              >
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <h2 className="text-sm font-semibold text-foreground">최근 경기</h2>
+                </div>
+                {recentFights.length > 0 ? (
+                  recentFights.map((f) => (
                     <RecentFightRow key={f.id} f={f} fighterId={fighter.id} />
-                  ))}
-                </motion.div>
-              )}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted text-center py-4">경기 기록이 없습니다.</p>
+                )}
+              </motion.div>
 
               {/* 댓글 섹션 (레거시 comments) */}
               {fingerprint && (

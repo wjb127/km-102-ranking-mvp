@@ -1,48 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { boardPosts } from "@/db/schema";
 import { rowToDto, toSlug, type BoardCategoryKo } from "@/lib/board-mappers";
 
-// ── GET /api/board?category=분석|토론|자유|전체 ──
+// ── GET /api/board?category=분석|토론|자유|전체&sort=all|best|trending&limit=N ──
+// sort: all(기본) | best(추천 50+) | trending(최근 6시간)
 export async function GET(req: NextRequest) {
-  const category = req.nextUrl.searchParams.get("category") || "전체";
+  const { searchParams } = req.nextUrl;
+  const category = searchParams.get("category") || "전체";
+  const sort = searchParams.get("sort") || "all";
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "200", 10) || 200, 500);
 
-  const rows =
-    category === "전체"
-      ? await db
-          .select()
-          .from(boardPosts)
-          .where(eq(boardPosts.isDeleted, false))
-          .orderBy(desc(boardPosts.createdAt))
-      : await (async () => {
-          const slug = toSlug(category);
-          if (!slug) return [];
-          return db
-            .select()
-            .from(boardPosts)
-            .where(eq(boardPosts.category, slug))
-            .orderBy(desc(boardPosts.createdAt));
-        })();
+  const conditions: SQL[] = [eq(boardPosts.isDeleted, false)];
 
-  const data = rows
-    .filter((r) => !r.isDeleted)
-    .map((r) =>
-      rowToDto({
-        id: r.id,
-        category: r.category,
-        title: r.title,
-        content: r.content,
-        authorNickname: r.authorNickname,
-        imageUrls: r.imageUrls,
-        viewCount: r.viewCount,
-        likeCount: r.likeCount,
-        commentCount: r.commentCount,
-        createdAt: r.createdAt,
-      })
-    );
+  if (category !== "전체") {
+    const slug = toSlug(category as BoardCategoryKo);
+    if (!slug) return NextResponse.json({ success: true, data: [] });
+    conditions.push(eq(boardPosts.category, slug));
+  }
 
-  return NextResponse.json({ success: true, data });
+  if (sort === "best") {
+    conditions.push(gte(boardPosts.likeCount, 50));
+  } else if (sort === "trending") {
+    const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    conditions.push(gte(boardPosts.createdAt, cutoff));
+  }
+
+  const where = conditions.length === 1 ? conditions[0] : and(...conditions);
+  const orderBy =
+    sort === "best"
+      ? [desc(boardPosts.likeCount), desc(boardPosts.createdAt)]
+      : [desc(boardPosts.createdAt)];
+
+  const rows = await db
+    .select()
+    .from(boardPosts)
+    .where(where)
+    .orderBy(...orderBy)
+    .limit(limit);
+
+  const [{ total }] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(boardPosts)
+    .where(where);
+
+  const data = rows.map((r) =>
+    rowToDto({
+      id: r.id,
+      category: r.category,
+      title: r.title,
+      content: r.content,
+      authorNickname: r.authorNickname,
+      imageUrls: r.imageUrls,
+      viewCount: r.viewCount,
+      likeCount: r.likeCount,
+      commentCount: r.commentCount,
+      createdAt: r.createdAt,
+    })
+  );
+
+  return NextResponse.json({ success: true, data, total });
 }
 
 // ── POST /api/board ──

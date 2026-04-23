@@ -282,25 +282,32 @@ export default function EventDetailClient({ id }: Props) {
               )}
             </motion.div>
 
-            {card.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, delay: 0.15, ease: "easeOut" as const }}
-                className="space-y-3"
-              >
-                <h2 className="text-sm font-semibold text-muted flex items-center gap-1.5">
-                  <Swords className="w-4 h-4" />
-                  파이트 카드
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.15, ease: "easeOut" as const }}
+              className="space-y-3"
+            >
+              <h2 className="text-sm font-semibold text-muted flex items-center gap-1.5">
+                <Swords className="w-4 h-4" />
+                파이트 카드
+                {card.length > 0 && (
                   <span className="text-xs font-normal text-muted/70">({card.length})</span>
-                </h2>
+                )}
+              </h2>
+              {card.length > 0 ? (
                 <div className="space-y-2">
                   {card.map((f) => (
                     <FightRow key={f.id} f={f} />
                   ))}
                 </div>
-              </motion.div>
-            )}
+              ) : (
+                <div className="rounded-xl border border-border bg-surface px-4 py-8 text-center">
+                  <Swords className="w-8 h-8 text-muted/40 mx-auto mb-2" />
+                  <p className="text-sm text-muted">파이트 카드 정보가 아직 등록되지 않았습니다.</p>
+                </div>
+              )}
+            </motion.div>
 
             <div className="border-t border-border" />
 
