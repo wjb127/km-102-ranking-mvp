@@ -68,11 +68,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { category, title, content, author } = body as {
+    const { category, title, content, author, imageUrls } = body as {
       category: BoardCategoryKo;
       title: string;
       content: string;
       author: string;
+      imageUrls?: string[];
     };
 
     const errors: string[] = [];
@@ -99,6 +100,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "잘못된 카테고리." }, { status: 400 });
     }
 
+    const safeImageUrls = Array.isArray(imageUrls)
+      ? imageUrls.filter((u) => typeof u === "string" && u.startsWith("https://")).slice(0, 3)
+      : [];
+
     const [inserted] = await db
       .insert(boardPosts)
       .values({
@@ -106,6 +111,7 @@ export async function POST(req: NextRequest) {
         title: title.trim(),
         content: content.trim(),
         authorNickname: author.trim(),
+        imageUrls: safeImageUrls.length > 0 ? safeImageUrls : null,
       })
       .returning();
 

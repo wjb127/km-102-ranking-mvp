@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -188,6 +188,9 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [loggedInNickname, setLoggedInNickname] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 로그인 상태 확인 → 글쓴이 자동 채움
   useEffect(() => {
@@ -209,6 +212,45 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
       cancelled = true;
     };
   }, []);
+
+  const handleImageSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    if (imageUrls.length + files.length > 3) {
+      setError("이미지는 최대 3장까지 첨부할 수 있습니다.");
+      return;
+    }
+    setUploading(true);
+    setError("");
+    try {
+      const sigRes = await fetch("/api/upload", { method: "POST" });
+      if (!sigRes.ok) {
+        const j = await sigRes.json().catch(() => ({}));
+        setError(j.error ?? "이미지 업로드는 로그인 후 이용할 수 있습니다.");
+        return;
+      }
+      const { data: sig } = await sigRes.json();
+      const uploaded: string[] = [];
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("api_key", sig.apiKey);
+        fd.append("timestamp", String(sig.timestamp));
+        fd.append("signature", sig.signature);
+        fd.append("folder", sig.folder);
+        const upRes = await fetch(sig.uploadUrl, { method: "POST", body: fd });
+        if (!upRes.ok) throw new Error("Cloudinary 업로드 실패");
+        const upJson = await upRes.json();
+        uploaded.push(upJson.secure_url as string);
+      }
+      setImageUrls((prev) => [...prev, ...uploaded]);
+    } catch {
+      setError("이미지 업로드에 실패했습니다. Cloudinary 설정을 확인해주세요.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [imageUrls.length]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -241,6 +283,7 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
             title: title.trim(),
             content: content.trim(),
             author: author.trim(),
+            imageUrls,
           }),
         });
         const data = await res.json();
@@ -325,6 +368,51 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
         {/* 글자수 카운트 */}
         <div className="flex justify-end text-xs text-muted">
           {content.length}/5000
+        </div>
+
+        {/* 이미지 첨부 */}
+        <div className="space-y-2">
+          {imageUrls.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {imageUrls.map((url, i) => (
+                <div key={url} className="relative w-20 h-20 rounded-md overflow-hidden border border-border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`첨부 ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setImageUrls((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="absolute top-0.5 right-0.5 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {imageUrls.length < 3 && (
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleImageSelect}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:bg-border/20 transition-colors disabled:opacity-50"
+              >
+                {uploading ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" />업로드 중...</>
+                ) : (
+                  <><ImageIcon className="w-3.5 h-3.5" />사진 첨부 (최대 3장)</>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 에러 메시지 */}

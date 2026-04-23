@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync:mma": "tsx scripts/sync-balldontlie.ts"
+    "sync:mma": "tsx scripts/sync-balldontlie.ts",
+    "translate:batch": "tsx scripts/translate-batch.ts"
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.1.0",
