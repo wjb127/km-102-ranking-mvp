@@ -129,7 +129,13 @@ interface BDLFighter {
   record_draws: number;
   record_no_contests: number;
   active: boolean;
-  weight_class?: { id: number; name: string; abbreviation: string; weight_limit_lbs: number; gender: string };
+  weight_class?: {
+    id: number;
+    name: string;
+    abbreviation: string;
+    weight_limit_lbs: number | null;
+    gender: string | null;
+  };
 }
 
 async function syncFighters() {
@@ -166,6 +172,10 @@ async function syncFighters() {
         isActive: f.active ?? true,
         weightLbs: f.weight_lbs ?? null,
         stance: f.stance ?? null,
+        birthPlace: f.birth_place ?? null,
+        gender: f.weight_class?.gender ?? null,
+        weightClassAbbr: f.weight_class?.abbreviation ?? null,
+        weightLimitLbs: f.weight_class?.weight_limit_lbs ?? null,
       };
       await db
         .insert(fighters)
@@ -187,6 +197,10 @@ async function syncFighters() {
             isActive: values.isActive,
             weightLbs: values.weightLbs,
             stance: values.stance,
+            birthPlace: values.birthPlace,
+            gender: values.gender,
+            weightClassAbbr: values.weightClassAbbr,
+            weightLimitLbs: values.weightLimitLbs,
             updatedAt: new Date(),
           },
         });
@@ -217,6 +231,9 @@ interface BDLEvent {
   venue_state: string | null;
   venue_country: string | null;
   status: string | null;
+  main_card_start_time: string | null;
+  prelims_start_time: string | null;
+  early_prelims_start_time: string | null;
   league: { id: number; name: string; abbreviation: string };
 }
 
@@ -238,24 +255,42 @@ async function syncEvents() {
       const orgId = e.league ? await upsertOrganization(e.league) : null;
       const venue = [e.venue_name, e.venue_city, e.venue_state].filter(Boolean).join(", ") || null;
 
+      const values = {
+        externalId: e.id,
+        organizationId: orgId,
+        name: e.name,
+        shortName: e.short_name,
+        eventDate: e.date ? new Date(e.date) : null,
+        status: e.status,
+        mainCardStart: e.main_card_start_time ? new Date(e.main_card_start_time) : null,
+        prelimsStart: e.prelims_start_time ? new Date(e.prelims_start_time) : null,
+        earlyPrelimsStart: e.early_prelims_start_time ? new Date(e.early_prelims_start_time) : null,
+        venue,
+        venueName: e.venue_name,
+        venueCity: e.venue_city,
+        venueState: e.venue_state,
+        country: e.venue_country,
+      };
+
       await db
         .insert(mmaEvents)
-        .values({
-          externalId: e.id,
-          organizationId: orgId,
-          name: e.name,
-          eventDate: e.date ? new Date(e.date) : null,
-          venue,
-          country: e.venue_country,
-        })
+        .values(values)
         .onConflictDoUpdate({
           target: mmaEvents.externalId,
           set: {
-            organizationId: orgId,
-            name: e.name,
-            eventDate: e.date ? new Date(e.date) : null,
-            venue,
-            country: e.venue_country,
+            organizationId: values.organizationId,
+            name: values.name,
+            shortName: values.shortName,
+            eventDate: values.eventDate,
+            status: values.status,
+            mainCardStart: values.mainCardStart,
+            prelimsStart: values.prelimsStart,
+            earlyPrelimsStart: values.earlyPrelimsStart,
+            venue: values.venue,
+            venueName: values.venueName,
+            venueCity: values.venueCity,
+            venueState: values.venueState,
+            country: values.country,
           },
         });
       total++;

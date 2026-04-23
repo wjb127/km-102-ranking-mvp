@@ -190,6 +190,10 @@ export const fighters = pgTable(
     isActive: boolean("is_active").notNull().default(true),
     weightLbs: integer("weight_lbs"),
     stance: varchar("stance", { length: 50 }),
+    birthPlace: text("birth_place"),
+    gender: varchar("gender", { length: 10 }),
+    weightClassAbbr: varchar("weight_class_abbr", { length: 10 }),
+    weightLimitLbs: integer("weight_limit_lbs"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -198,6 +202,7 @@ export const fighters = pgTable(
     index("idx_fighters_weight_class").on(t.weightClass),
     index("idx_fighters_career_wins").on(t.careerWins),
     index("idx_fighters_active").on(t.isActive),
+    index("idx_fighters_gender").on(t.gender),
   ]
 );
 
@@ -233,14 +238,25 @@ export const mmaEvents = pgTable(
     organizationId: integer("organization_id").references(() => organizations.id),
     name: varchar("name", { length: 255 }).notNull(),
     nameKo: varchar("name_ko", { length: 255 }),
+    shortName: varchar("short_name", { length: 255 }),
     eventDate: timestamp("event_date", { withTimezone: true }),
+    status: varchar("status", { length: 20 }),
+    mainCardStart: timestamp("main_card_start", { withTimezone: true }),
+    prelimsStart: timestamp("prelims_start", { withTimezone: true }),
+    earlyPrelimsStart: timestamp("early_prelims_start", { withTimezone: true }),
     venue: varchar("venue", { length: 255 }),
     venueKo: varchar("venue_ko", { length: 255 }),
+    venueName: varchar("venue_name", { length: 255 }),
+    venueCity: varchar("venue_city", { length: 100 }),
+    venueState: varchar("venue_state", { length: 50 }),
     country: varchar("country", { length: 100 }),
     imageUrl: text("image_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("idx_events_date").on(t.eventDate)]
+  (t) => [
+    index("idx_events_date").on(t.eventDate),
+    index("idx_events_status").on(t.status),
+  ]
 );
 
 /** 경기 */
