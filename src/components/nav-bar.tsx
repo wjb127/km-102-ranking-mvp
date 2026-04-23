@@ -154,10 +154,13 @@ export default function NavBar() {
                     </span>
                   )}
                 </Link>
-                <span className="text-xs text-foreground font-semibold flex items-center gap-1">
+                <Link
+                  href="/profile"
+                  className="text-xs text-foreground font-semibold flex items-center gap-1 hover:text-primary transition-colors"
+                >
                   <User className="w-3.5 h-3.5" />
                   {user.nickname}
-                </span>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="px-2 py-1 text-xs text-muted hover:text-foreground border border-border rounded"
@@ -232,7 +235,17 @@ export default function NavBar() {
                     </span>
                   )}
                 </Link>
-                <span className="text-foreground font-semibold">{user.nickname}</span>
+                {user.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className="px-1.5 py-0.5 text-[10px] font-semibold text-red-600 border border-red-300 rounded"
+                  >
+                    관리자
+                  </Link>
+                )}
+                <Link href="/profile" className="text-foreground font-semibold hover:text-primary transition-colors">
+                  {user.nickname}
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="px-2 py-0.5 text-muted border border-border rounded"

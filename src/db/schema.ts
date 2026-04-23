@@ -109,10 +109,14 @@ export const users = pgTable(
     image: text("image"),
     role: varchar("role", { length: 20 }).notNull().default("user"),
     isBanned: boolean("is_banned").notNull().default(false),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("idx_users_nickname").on(t.nickname)]
+  (t) => [
+    index("idx_users_nickname").on(t.nickname),
+    index("idx_users_deleted").on(t.deletedAt),
+  ]
 );
 
 /** Auth.js OAuth 계정 연결 */
@@ -347,6 +351,7 @@ export const boardPosts = pgTable(
     likeCount: integer("like_count").notNull().default(0),
     commentCount: integer("comment_count").notNull().default(0),
     isDeleted: boolean("is_deleted").notNull().default(false),
+    hiddenByAdmin: boolean("hidden_by_admin").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -354,6 +359,7 @@ export const boardPosts = pgTable(
     index("idx_posts_category").on(t.category, t.createdAt),
     index("idx_posts_created").on(t.createdAt),
     index("idx_posts_hot").on(t.likeCount, t.createdAt),
+    index("idx_posts_hidden").on(t.hiddenByAdmin),
   ]
 );
 
