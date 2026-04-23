@@ -11,6 +11,7 @@ Phase 4 + 레거시 정리 완료 시점 기준
 |---|---|
 | DB 연동 완료 | 전 페이지 / 전 엔드포인트 |
 | 외부 API 프록시 | `/api/raw-data` (balldontlie) · `/api/translate` (DeepL) · `/api/upload` (Cloudinary) |
+| 자동 동기화 | `pnpm sync:mma` → balldontlie → Neon DB 업서트 (fighters 3,000+ / events 3,600+) |
 | Mock / 레거시 | 없음 — 전부 제거 완료 |
 
 ---
@@ -79,7 +80,20 @@ Phase 4 + 레거시 정리 완료 시점 기준
 
 ---
 
+## 자동 동기화 스크립트
+
+`scripts/sync-balldontlie.ts`
+
+- 실행: `pnpm sync:mma` (기본: fighters + events)
+- 옵션: `--fighters`, `--events`, `--limit N` (최대 페이지 수), `--per-page N`
+- 무료 티어 제한 준수: 요청 사이 13초 간격 (5 req/min)
+- 업서트 키: `external_id`
+- **제외**: `/fights` 엔드포인트는 balldontlie 유료 플랜 전용이라 미지원
+- 이벤트의 `league.abbreviation` 기준으로 `organizations` 자동 upsert
+
 ## 남은 과제
 
 1. 레거시 DB 테이블 (`categories`, `persons`, `votes`, `comments`) DROP 마이그레이션 작성/적용
-2. `BALLDONTLIE_API_KEY` 환경변수는 `/api/raw-data`에서만 사용 (프로덕션에서 제거해도 무방)
+2. 전체 fighters/events 동기화 (현재 fighters 30페이지 = 3,000명, events 36페이지 = 3,600개까지 수집)
+3. 번역 (`full_name_ko`, `name_ko` 등) 배치 채우기 — DeepL 프록시 활용
+4. `/fights` 유료 플랜 구독 시 스크립트 확장
