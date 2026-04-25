@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { boardPosts } from "@/db/schema";
 import { rowToDto } from "@/lib/board-mappers";
@@ -19,14 +19,14 @@ export async function GET(
     );
   }
 
-  // 조회수 증가와 함께 단일 쿼리로 조회
+  // 조회수 증가와 함께 단일 쿼리로 조회 (삭제·관리자숨김 제외)
   const rows = await db
     .update(boardPosts)
     .set({ viewCount: sql`${boardPosts.viewCount} + 1` })
-    .where(eq(boardPosts.id, postId))
+    .where(and(eq(boardPosts.id, postId), eq(boardPosts.isDeleted, false), eq(boardPosts.hiddenByAdmin, false)))
     .returning();
 
-  if (rows.length === 0 || rows[0].isDeleted) {
+  if (rows.length === 0) {
     return NextResponse.json(
       { success: false, error: "게시글을 찾을 수 없습니다." },
       { status: 404 }

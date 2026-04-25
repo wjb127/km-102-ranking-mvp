@@ -1,17 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Flame,
   Search,
   Calendar,
   MessageSquare,
   Trophy,
   ChevronRight,
   Swords,
-  Users,
   Eye,
   ThumbsUp,
 } from "lucide-react";
@@ -78,7 +77,7 @@ export default function HomePage() {
     { revalidateOnFocus: false }
   );
   const events = eventsData?.data ?? [];
-  const now = Date.now();
+  const [now] = useState(() => Date.now());
   const upcomingEvents = events
     .filter((e) => e.eventDate && new Date(e.eventDate).getTime() >= now)
     .sort(
@@ -301,7 +300,7 @@ export default function HomePage() {
                       {/* 뱃지 */}
                       {eventDate && (
                         <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
-                          D-{Math.max(0, Math.ceil((eventDate.getTime() - Date.now()) / 86400000))}
+                          D-{Math.max(0, Math.ceil((eventDate.getTime() - now) / 86400000))}
                         </span>
                       )}
                     </div>

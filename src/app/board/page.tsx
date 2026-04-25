@@ -300,7 +300,7 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
         setSubmitting(false);
       }
     },
-    [category, title, author, content, submitting, onSuccess]
+    [category, title, author, content, imageUrls, submitting, onSuccess]
   );
 
   return (
@@ -467,10 +467,8 @@ export default function BoardPage() {
     { revalidateOnFocus: false }
   );
 
-  const rawPosts: BoardPost[] = data?.data ?? [];
-
   // 정렬 모드 적용
-  const posts = useMemo(() => applySort(rawPosts, sortMode), [rawPosts, sortMode]);
+  const posts = useMemo(() => applySort((data?.data ?? []) as BoardPost[], sortMode), [data?.data, sortMode]);
 
   const handleWriteSuccess = useCallback(() => {
     setShowWriteForm(false);

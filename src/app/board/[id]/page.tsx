@@ -133,7 +133,7 @@ export default function BoardDetailPage() {
       const res = await fetch(`/api/board/${id}/like`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ add: newLiked }),
+        body: JSON.stringify({ add: newLiked, fingerprint }),
       });
       const result = await res.json();
 
@@ -146,7 +146,7 @@ export default function BoardDetailPage() {
     } finally {
       setLiking(false);
     }
-  }, [id, liked, liking]);
+  }, [id, liked, liking, fingerprint]);
 
   return (
     <div className="min-h-screen bg-background">

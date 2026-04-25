@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const sort = searchParams.get("sort") || "all";
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "200", 10) || 200, 500);
 
-  const conditions: SQL[] = [eq(boardPosts.isDeleted, false)];
+  const conditions: SQL[] = [eq(boardPosts.isDeleted, false), eq(boardPosts.hiddenByAdmin, false)];
 
   if (category !== "전체") {
     const slug = toSlug(category as BoardCategoryKo);

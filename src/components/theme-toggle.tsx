@@ -10,12 +10,12 @@ export default function ThemeToggle() {
 
   // 초기 테마 로드
   useEffect(() => {
-    setMounted(true);
     const stored = localStorage.getItem("theme");
-    if (stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-      setDark(true);
-      document.documentElement.classList.add("dark");
-    }
+    const isDark = stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    if (isDark) document.documentElement.classList.add("dark");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDark(isDark);
+    setMounted(true);
   }, []);
 
   const toggle = () => {

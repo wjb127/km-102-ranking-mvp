@@ -64,6 +64,7 @@ export default function NavBar() {
   // 로그인 상태일 때만 미읽음 카운트 폴링 (60초 간격)
   useEffect(() => {
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUnread(0);
       return;
     }
