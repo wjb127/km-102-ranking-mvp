@@ -2,15 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { messages, users } from "@/db/schema";
-import { getCurrentSession } from "@/lib/auth/session";
+import { requireSession } from "@/lib/auth/guard";
 
 // ── GET /api/messages?box=inbox|sent ──
 // 받은편지함 기본. ?box=sent 이면 보낸편지함.
 export async function GET(req: NextRequest) {
-  const session = await getCurrentSession();
-  if (!session) {
-    return NextResponse.json({ success: false, error: "로그인이 필요합니다." }, { status: 401 });
-  }
+  const { session, response } = await requireSession();
+  if (response) return response;
 
   const { searchParams } = new URL(req.url);
   const box = searchParams.get("box") === "sent" ? "sent" : "inbox";
@@ -102,10 +100,8 @@ export async function GET(req: NextRequest) {
 
 // ── POST /api/messages ── { receiverNickname, content }
 export async function POST(req: NextRequest) {
-  const session = await getCurrentSession();
-  if (!session) {
-    return NextResponse.json({ success: false, error: "로그인이 필요합니다." }, { status: 401 });
-  }
+  const { session, response } = await requireSession();
+  if (response) return response;
 
   try {
     const body = await req.json();

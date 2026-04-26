@@ -29,40 +29,48 @@ export async function POST(
         { status: 400 }
       );
     }
+    if (typeof fingerprint !== "string" || !fingerprint.trim()) {
+      return NextResponse.json(
+        { success: false, error: "fingerprint가 필요합니다." },
+        { status: 400 }
+      );
+    }
+
+    const [post] = await db
+      .select({ likes: boardPosts.likeCount })
+      .from(boardPosts)
+      .where(and(eq(boardPosts.id, postId), eq(boardPosts.isDeleted, false), eq(boardPosts.hiddenByAdmin, false)))
+      .limit(1);
+    if (!post) {
+      return NextResponse.json(
+        { success: false, error: "게시글을 찾을 수 없습니다." },
+        { status: 404 }
+      );
+    }
 
     // fingerprint 기반 멱등성 처리
-    if (fingerprint) {
-      const existing = await db
-        .select({ id: postLikes.id })
-        .from(postLikes)
-        .where(and(eq(postLikes.postId, postId), eq(postLikes.fingerprint, fingerprint)))
-        .limit(1);
+    const safeFingerprint = fingerprint.trim();
+    const existing = await db
+      .select({ id: postLikes.id })
+      .from(postLikes)
+      .where(and(eq(postLikes.postId, postId), eq(postLikes.fingerprint, safeFingerprint)))
+      .limit(1);
 
-      const already = existing.length > 0;
+    const already = existing.length > 0;
 
-      if (add && already) {
-        // 이미 추천했으면 현재 카운트만 반환
-        const [p] = await db
-          .select({ likes: boardPosts.likeCount })
-          .from(boardPosts)
-          .where(eq(boardPosts.id, postId));
-        return NextResponse.json({ success: true, data: { likes: p?.likes ?? 0 } });
-      }
-      if (!add && !already) {
-        const [p] = await db
-          .select({ likes: boardPosts.likeCount })
-          .from(boardPosts)
-          .where(eq(boardPosts.id, postId));
-        return NextResponse.json({ success: true, data: { likes: p?.likes ?? 0 } });
-      }
+    if (add && already) {
+      return NextResponse.json({ success: true, data: { likes: post.likes } });
+    }
+    if (!add && !already) {
+      return NextResponse.json({ success: true, data: { likes: post.likes } });
+    }
 
-      if (add) {
-        await db.insert(postLikes).values({ postId, fingerprint });
-      } else {
-        await db
-          .delete(postLikes)
-          .where(and(eq(postLikes.postId, postId), eq(postLikes.fingerprint, fingerprint)));
-      }
+    if (add) {
+      await db.insert(postLikes).values({ postId, fingerprint: safeFingerprint });
+    } else {
+      await db
+        .delete(postLikes)
+        .where(and(eq(postLikes.postId, postId), eq(postLikes.fingerprint, safeFingerprint)));
     }
 
     // board_posts.like_count 증감 (음수 방지)
@@ -73,10 +81,17 @@ export async function POST(
           ? sql`${boardPosts.likeCount} + 1`
           : sql`GREATEST(${boardPosts.likeCount} - 1, 0)`,
       })
-      .where(eq(boardPosts.id, postId))
+      .where(and(eq(boardPosts.id, postId), eq(boardPosts.isDeleted, false), eq(boardPosts.hiddenByAdmin, false)))
       .returning({ likes: boardPosts.likeCount });
 
-    return NextResponse.json({ success: true, data: { likes: updated?.likes ?? 0 } });
+    if (!updated) {
+      return NextResponse.json(
+        { success: false, error: "게시글을 찾을 수 없습니다." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, data: { likes: updated.likes } });
   } catch (e) {
     console.error("[POST /api/board/:id/like]", e);
     return NextResponse.json({ success: false, error: "잘못된 요청입니다." }, { status: 400 });

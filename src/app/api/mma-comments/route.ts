@@ -1,13 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { mmaComments, boardPosts } from "@/db/schema";
+import { boardPosts, fighters, fights, mmaComments, mmaEvents } from "@/db/schema";
 
 const VALID_TARGETS = ["post", "fighter", "event", "fight"] as const;
 type TargetType = (typeof VALID_TARGETS)[number];
 
 function isValidTarget(v: unknown): v is TargetType {
   return typeof v === "string" && (VALID_TARGETS as readonly string[]).includes(v);
+}
+
+async function targetExists(targetType: TargetType, targetId: number): Promise<boolean> {
+  if (targetType === "post") {
+    const [row] = await db
+      .select({ id: boardPosts.id })
+      .from(boardPosts)
+      .where(and(eq(boardPosts.id, targetId), eq(boardPosts.isDeleted, false), eq(boardPosts.hiddenByAdmin, false)))
+      .limit(1);
+    return Boolean(row);
+  }
+  if (targetType === "fighter") {
+    const [row] = await db.select({ id: fighters.id }).from(fighters).where(eq(fighters.id, targetId)).limit(1);
+    return Boolean(row);
+  }
+  if (targetType === "event") {
+    const [row] = await db.select({ id: mmaEvents.id }).from(mmaEvents).where(eq(mmaEvents.id, targetId)).limit(1);
+    return Boolean(row);
+  }
+  const [row] = await db.select({ id: fights.id }).from(fights).where(eq(fights.id, targetId)).limit(1);
+  return Boolean(row);
 }
 
 // ── GET /api/mma-comments?targetType=post&targetId=130 ──
@@ -84,14 +105,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const numericTargetId = Number(targetId);
+    if (!Number.isInteger(numericTargetId) || numericTargetId <= 0) {
+      return NextResponse.json(
+        { success: false, error: "targetId가 올바르지 않습니다." },
+        { status: 400 }
+      );
+    }
+    if (!(await targetExists(targetType, numericTargetId))) {
+      return NextResponse.json(
+        { success: false, error: "댓글 대상을 찾을 수 없습니다." },
+        { status: 404 }
+      );
+    }
+    if (parentId != null) {
+      const [parent] = await db
+        .select({ id: mmaComments.id })
+        .from(mmaComments)
+        .where(
+          and(
+            eq(mmaComments.id, Number(parentId)),
+            eq(mmaComments.targetType, targetType),
+            eq(mmaComments.targetId, numericTargetId),
+            eq(mmaComments.isDeleted, false)
+          )
+        )
+        .limit(1);
+      if (!parent) {
+        return NextResponse.json(
+          { success: false, error: "부모 댓글을 찾을 수 없습니다." },
+          { status: 404 }
+        );
+      }
+    }
+
     const [inserted] = await db
       .insert(mmaComments)
       .values({
         targetType,
-        targetId,
+        targetId: numericTargetId,
         authorNickname: nickname.trim(),
         content: content.trim(),
-        parentId: parentId ?? null,
+        parentId: parentId == null ? null : Number(parentId),
       })
       .returning();
 
@@ -100,7 +155,7 @@ export async function POST(req: NextRequest) {
       await db
         .update(boardPosts)
         .set({ commentCount: sql`${boardPosts.commentCount} + 1` })
-        .where(eq(boardPosts.id, targetId));
+        .where(eq(boardPosts.id, numericTargetId));
     }
 
     return NextResponse.json(

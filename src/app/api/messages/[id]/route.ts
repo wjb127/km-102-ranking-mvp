@@ -2,17 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, eq, or } from "drizzle-orm";
 import { db } from "@/db";
 import { messages, users } from "@/db/schema";
-import { getCurrentSession } from "@/lib/auth/session";
+import { requireSession } from "@/lib/auth/guard";
 
 // ── GET /api/messages/[id] : 쪽지 상세 + 받은사람이면 읽음 처리 ──
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getCurrentSession();
-  if (!session) {
-    return NextResponse.json({ success: false, error: "로그인이 필요합니다." }, { status: 401 });
-  }
+  const { session, response } = await requireSession();
+  if (response) return response;
 
   const { id } = await params;
   const msgId = parseInt(id, 10);
@@ -73,10 +71,8 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getCurrentSession();
-  if (!session) {
-    return NextResponse.json({ success: false, error: "로그인이 필요합니다." }, { status: 401 });
-  }
+  const { session, response } = await requireSession();
+  if (response) return response;
 
   const { id } = await params;
   const msgId = parseInt(id, 10);

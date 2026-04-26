@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { signSession, setSessionCookie } from "@/lib/auth/session";
@@ -24,13 +24,14 @@ export async function POST(req: NextRequest) {
         email: users.email,
         nickname: users.nickname,
         role: users.role,
+        isBanned: users.isBanned,
         passwordHash: users.passwordHash,
       })
       .from(users)
-      .where(eq(users.email, email))
+      .where(and(eq(users.email, email), isNull(users.deletedAt)))
       .limit(1);
 
-    if (!user || !user.passwordHash) {
+    if (!user || user.isBanned || !user.passwordHash) {
       return NextResponse.json(
         { success: false, error: "이메일 또는 비밀번호가 올바르지 않습니다." },
         { status: 401 }

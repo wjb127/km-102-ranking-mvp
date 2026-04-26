@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
-import { getCurrentSession } from "@/lib/auth/session";
+import { requireSession } from "@/lib/auth/guard";
 
 export async function GET() {
-  const session = await getCurrentSession();
-  if (!session) {
+  const { session, response } = await requireSession();
+  if (response) {
     return NextResponse.json({ success: true, data: null });
   }
+
   return NextResponse.json({
     success: true,
     data: {
-      id: session.sub,
-      email: session.email,
-      nickname: session.nickname,
-      role: session.role,
+      id: session!.sub,
+      email: session!.email,
+      nickname: session!.nickname,
+      role: session!.role,
     },
   });
 }

@@ -36,8 +36,20 @@ export async function POST(req: NextRequest) {
         { status: 404 }
       );
     }
+    if (target.isDeleted) {
+      return NextResponse.json(
+        { success: false, error: "이미 숨김 처리된 댓글입니다." },
+        { status: 409 }
+      );
+    }
 
     const session = await getCurrentSession();
+    if (!session && !fingerprint) {
+      return NextResponse.json(
+        { success: false, error: "fingerprint가 필요합니다." },
+        { status: 400 }
+      );
+    }
 
     // 중복 신고 방지 (로그인 유저는 userId, 비로그인은 fingerprint 기준)
     if (session) {
