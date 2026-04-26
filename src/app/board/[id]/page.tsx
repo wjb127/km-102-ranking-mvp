@@ -100,7 +100,7 @@ export default function BoardDetailPage() {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [liking, setLiking] = useState(false);
-  const [fingerprint, setFingerprint] = useState("anon");
+  const [fingerprint, setFingerprint] = useState<string | null>(null);
 
   // fingerprint 초기화
   useEffect(() => {
@@ -124,7 +124,7 @@ export default function BoardDetailPage() {
 
   // 좋아요 토글
   const handleLike = useCallback(async () => {
-    if (liking) return;
+    if (liking || !fingerprint) return;
     setLiking(true);
 
     const newLiked = !liked;
@@ -237,7 +237,7 @@ export default function BoardDetailPage() {
             <div className="flex justify-center py-4">
               <button
                 onClick={handleLike}
-                disabled={liking}
+                disabled={liking || !fingerprint}
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-xl border px-8 py-4 transition-all",
                   liked
@@ -267,7 +267,7 @@ export default function BoardDetailPage() {
             <CommentSection
               targetType="post"
               targetId={post.id}
-              fingerprint={fingerprint}
+              fingerprint={fingerprint ?? ""}
             />
 
             {/* ── 목록으로 돌아가기 ── */}
