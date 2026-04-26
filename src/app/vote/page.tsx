@@ -119,6 +119,12 @@ export default function VotePage() {
   const [activeCategory, setActiveCategory] = useState("pound-for-pound");
   const [fingerprint, setFingerprint] = useState<string>("");
   const [votingId, setVotingId] = useState<string | null>(null);
+  const [voteMoment, setVoteMoment] = useState<{
+    fighterId: string;
+    fighterName: string;
+    action: "vote" | "cancel";
+    rank: number;
+  } | null>(null);
 
   // fingerprint 로드
   useEffect(() => {
@@ -184,6 +190,16 @@ export default function VotePage() {
           );
           // 다시 정렬
           optimistic.fighters.sort((a, b) => b.voteCount - a.voteCount);
+          const updatedFighter = optimistic.fighters.find((f) => f.id === fighter.id);
+          if (updatedFighter) {
+            setVoteMoment({
+              fighterId: fighter.id,
+              fighterName: fighter.name,
+              action: updatedFighter.voted ? "vote" : "cancel",
+              rank: optimistic.fighters.findIndex((f) => f.id === fighter.id) + 1,
+            });
+            window.setTimeout(() => setVoteMoment(null), 2400);
+          }
           mutateVotes({ data: optimistic }, false);
         }
 
@@ -315,6 +331,35 @@ export default function VotePage() {
           )}
         </AnimatePresence>
 
+        {/* ── 투표 반영 피드백 ── */}
+        <AnimatePresence>
+          {voteMoment && (
+            <motion.div
+              key={`${voteMoment.fighterId}-${voteMoment.action}`}
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ duration: 0.22, ease: "easeOut" as const }}
+              className="mb-5 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
+                  <Trophy className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-foreground">
+                    {voteMoment.fighterName}
+                    {voteMoment.action === "vote" ? "에 투표가 반영됐습니다." : " 투표가 취소됐습니다."}
+                  </p>
+                  <p className="text-xs text-muted">
+                    현재 이 카테고리 {voteMoment.rank}위 · 랭킹이 바로 재정렬됩니다.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* ── 선수 리스트 ── */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -347,9 +392,13 @@ export default function VotePage() {
                   <motion.div
                     key={fighter.id}
                     initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    animate={
+                      voteMoment?.fighterId === fighter.id
+                        ? { opacity: 1, y: 0, scale: [1, 1.018, 1], borderColor: "var(--primary)" }
+                        : { opacity: 1, y: 0, scale: 1 }
+                    }
                     transition={{
-                      duration: 0.35,
+                      duration: voteMoment?.fighterId === fighter.id ? 0.45 : 0.35,
                       delay: index * 0.06,
                       ease: "easeOut" as const,
                     }}
@@ -358,7 +407,8 @@ export default function VotePage() {
                       "relative rounded-xl border p-4 transition-all",
                       style.border,
                       style.bg,
-                      fighter.voted && "ring-1 ring-primary/30"
+                      fighter.voted && "ring-1 ring-primary/30",
+                      voteMoment?.fighterId === fighter.id && "shadow-lg shadow-primary/20"
                     )}
                   >
                     {/* 배경 퍼센트 바 */}
@@ -386,14 +436,20 @@ export default function VotePage() {
 
                     <div className="relative flex items-center gap-3">
                       {/* 순위 뱃지 */}
-                      <div
+                      <motion.div
                         className={cn(
                           "flex items-center justify-center w-8 h-8 rounded-lg text-sm font-black shrink-0",
                           style.badge
                         )}
+                        animate={
+                          voteMoment?.fighterId === fighter.id
+                            ? { rotate: [0, -4, 4, 0], scale: [1, 1.12, 1] }
+                            : { rotate: 0, scale: 1 }
+                        }
+                        transition={{ duration: 0.45, ease: "easeOut" as const }}
                       >
                         {rank}
-                      </div>
+                      </motion.div>
 
                       {/* 선수 정보 */}
                       <div className="flex-1 min-w-0">
@@ -408,6 +464,16 @@ export default function VotePage() {
                           </h4>
                           {rank === 1 && (
                             <Crown className="w-4 h-4 text-yellow-400 shrink-0" />
+                          )}
+                          {voteMoment?.fighterId === fighter.id && (
+                            <motion.span
+                              initial={{ opacity: 0, x: -4 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -4 }}
+                              className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary"
+                            >
+                              방금 반영
+                            </motion.span>
                           )}
                         </div>
                         <div className="flex items-center gap-2 mt-1">

@@ -13,6 +13,7 @@ import {
   Swords,
   Eye,
   ThumbsUp,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DbFighter, DbEventSummary } from "@/lib/mma-types";
@@ -85,6 +86,7 @@ export default function HomePage() {
         new Date(a.eventDate ?? 0).getTime() - new Date(b.eventDate ?? 0).getTime()
     )
     .slice(0, 3);
+  const todayCard = upcomingEvents[0] ?? null;
 
   // 게시판 최신글
   const { data: boardData } = useSWR<{ data: BoardPost[] }>(
@@ -144,6 +146,81 @@ export default function HomePage() {
         <NoticeBanner />
         {/* 디시인사이드 스타일 배너 슬라이더 */}
         <HeroBanner />
+      </section>
+
+      {/* ── 오늘의 MMA 카드 ── */}
+      <section className="max-w-5xl mx-auto px-4 pb-10">
+        {todayCard ? (
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.12, ease: "easeOut" as const }}
+          >
+            <Link href={`/events/${todayCard.id}`}>
+              <div className="group overflow-hidden rounded-xl border border-primary/30 bg-surface transition-all hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10">
+                <div className="grid gap-0 md:grid-cols-[1.1fr_1.9fr]">
+                  <div className="flex min-h-[132px] flex-col justify-between bg-primary/10 p-5">
+                    <div>
+                      <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-1 text-[11px] font-black text-white">
+                        <Calendar className="h-3 w-3" />
+                        오늘의 MMA 카드
+                      </div>
+                      <p className="text-xs font-semibold text-primary">
+                        {todayCard.eventDate
+                          ? new Date(todayCard.eventDate).toLocaleDateString("ko-KR", {
+                              month: "long",
+                              day: "numeric",
+                              weekday: "short",
+                            })
+                          : "일정 미정"}
+                      </p>
+                    </div>
+                    <div className="text-3xl font-black text-primary">
+                      D-
+                      {todayCard.eventDate
+                        ? Math.max(0, Math.ceil((new Date(todayCard.eventDate).getTime() - now) / 86400000))
+                        : "-"}
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h2 className="truncate text-xl font-black text-foreground group-hover:text-primary">
+                          {todayCard.nameKo || todayCard.name}
+                        </h2>
+                        <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
+                          <MapPin className="h-4 w-4 shrink-0" />
+                          <span className="truncate">
+                            {[todayCard.venueKo || todayCard.venue, todayCard.country].filter(Boolean).join(" · ") || "-"}
+                          </span>
+                        </p>
+                      </div>
+                      <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-lg border border-border bg-background/40 px-3 py-2">
+                        <div className="text-[11px] text-muted">단체</div>
+                        <div className="truncate text-sm font-bold text-foreground">{todayCard.orgNameKo || todayCard.orgName || "-"}</div>
+                      </div>
+                      <div className="rounded-lg border border-border bg-background/40 px-3 py-2">
+                        <div className="text-[11px] text-muted">상태</div>
+                        <div className="text-sm font-bold text-primary">예정</div>
+                      </div>
+                      <div className="rounded-lg border border-border bg-background/40 px-3 py-2">
+                        <div className="text-[11px] text-muted">바로가기</div>
+                        <div className="text-sm font-bold text-foreground">카드 보기</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </motion.div>
+        ) : (
+          <div className="rounded-xl border border-border bg-surface p-5 text-sm text-muted">
+            예정된 MMA 카드가 아직 없습니다.
+          </div>
+        )}
       </section>
 
       {/* ── 퀵 네비게이션 ── */}

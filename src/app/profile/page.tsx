@@ -12,6 +12,10 @@ import {
   MessageSquare,
   AlertTriangle,
   KeyRound,
+  BarChart3,
+  Eye,
+  ThumbsUp,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +49,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [loaded, setLoaded] = useState(false);
   const [profile, setProfile] = useState<MyProfile | null>(null);
+  const [now] = useState(() => Date.now());
 
   // 닉네임 변경
   const [newNickname, setNewNickname] = useState("");
@@ -61,6 +66,8 @@ export default function ProfilePage() {
   // 내 글/댓글
   const [myPosts, setMyPosts] = useState<MyPost[]>([]);
   const [myComments, setMyComments] = useState<MyComment[]>([]);
+  const [postTotal, setPostTotal] = useState(0);
+  const [commentTotal, setCommentTotal] = useState(0);
 
   // 탈퇴 모달
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -92,8 +99,14 @@ export default function ProfilePage() {
         ]);
         const postsJson = await postsRes.json();
         const commentsJson = await commentsRes.json();
-        if (postsJson?.success) setMyPosts(postsJson.data);
-        if (commentsJson?.success) setMyComments(commentsJson.data);
+        if (postsJson?.success) {
+          setMyPosts(postsJson.data);
+          setPostTotal(Number(postsJson.total ?? postsJson.data.length));
+        }
+        if (commentsJson?.success) {
+          setMyComments(commentsJson.data);
+          setCommentTotal(Number(commentsJson.total ?? commentsJson.data.length));
+        }
       }
       setLoaded(true);
     })();
@@ -196,6 +209,24 @@ export default function ProfilePage() {
     return null;
   }
 
+  const totalViews = myPosts.reduce((sum, p) => sum + p.viewCount, 0);
+  const totalLikes = myPosts.reduce((sum, p) => sum + p.likeCount, 0);
+  const totalPostComments = myPosts.reduce((sum, p) => sum + p.commentCount, 0);
+  const categoryCounts = myPosts.reduce<Record<string, number>>((acc, post) => {
+    acc[post.category] = (acc[post.category] ?? 0) + 1;
+    return acc;
+  }, {});
+  const topCategory =
+    Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "탐색 중";
+  const joinDays = Math.max(
+    1,
+    Math.ceil((now - new Date(profile.createdAt).getTime()) / 86400000)
+  );
+  const activityScore = Math.min(
+    99,
+    Math.round(postTotal * 8 + commentTotal * 4 + totalLikes * 1.5 + totalViews / 100)
+  );
+
   return (
     <div className="min-h-screen bg-[var(--background)] pt-16 md:pt-20 pb-24 md:pb-8">
       <div className="mx-auto max-w-4xl px-4 md:px-6 space-y-6">
@@ -231,6 +262,70 @@ export default function ProfilePage() {
                 가입일 {new Date(profile.createdAt).toLocaleDateString("ko-KR")}
               </p>
             </div>
+          </div>
+        </section>
+
+        {/* 내 활동 요약 */}
+        <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--foreground)]">
+              <Sparkles className="h-4 w-4 text-[var(--primary)]" /> 내 활동 요약
+            </h3>
+            <span className="rounded-full bg-[var(--primary)]/10 px-2.5 py-1 text-[11px] font-bold text-[var(--primary)]">
+              활동 점수 {activityScore}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--background)]/35 p-3">
+              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
+                <FileText className="h-4 w-4" />
+              </div>
+              <p className="text-[11px] text-[var(--muted)]">작성 글</p>
+              <p className="text-xl font-black text-[var(--foreground)]">{postTotal}</p>
+            </div>
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--background)]/35 p-3">
+              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
+                <MessageSquare className="h-4 w-4" />
+              </div>
+              <p className="text-[11px] text-[var(--muted)]">작성 댓글</p>
+              <p className="text-xl font-black text-[var(--foreground)]">{commentTotal}</p>
+            </div>
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--background)]/35 p-3">
+              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--success)]/10 text-[var(--success)]">
+                <ThumbsUp className="h-4 w-4" />
+              </div>
+              <p className="text-[11px] text-[var(--muted)]">받은 추천</p>
+              <p className="text-xl font-black text-[var(--foreground)]">{totalLikes}</p>
+            </div>
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--background)]/35 p-3">
+              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--warning)]/10 text-[var(--warning)]">
+                <Eye className="h-4 w-4" />
+              </div>
+              <p className="text-[11px] text-[var(--muted)]">누적 조회</p>
+              <p className="text-xl font-black text-[var(--foreground)]">{totalViews.toLocaleString()}</p>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--background)]/25 px-3 py-2">
+              <p className="text-[11px] text-[var(--muted)]">주 활동 게시판</p>
+              <p className="truncate text-sm font-bold text-[var(--foreground)]">{topCategory}</p>
+            </div>
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--background)]/25 px-3 py-2">
+              <p className="text-[11px] text-[var(--muted)]">게시글 댓글 반응</p>
+              <p className="truncate text-sm font-bold text-[var(--foreground)]">{totalPostComments}개</p>
+            </div>
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--background)]/25 px-3 py-2">
+              <p className="text-[11px] text-[var(--muted)]">함께한 시간</p>
+              <p className="truncate text-sm font-bold text-[var(--foreground)]">{joinDays}일째</p>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-[var(--primary)]/5 px-3 py-2 text-xs text-[var(--muted)]">
+            <BarChart3 className="h-4 w-4 shrink-0 text-[var(--primary)]" />
+            <span>
+              {postTotal + commentTotal > 0
+                ? `${profile.nickname}님은 ${topCategory} 중심으로 활동 중입니다.`
+                : "첫 글이나 댓글을 남기면 활동 요약이 채워집니다."}
+            </span>
           </div>
         </section>
 
