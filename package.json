@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "sync:mma": "tsx scripts/sync-balldontlie.ts",
+    "sync:mma:fights": "tsx scripts/sync-balldontlie.ts --fights",
     "translate:batch": "tsx scripts/translate-batch.ts"
   },
   "dependencies": {
