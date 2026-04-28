@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "sync:mma": "tsx scripts/sync-balldontlie.ts",
+    "crawl:ufcstats": "tsx scripts/crawl-ufcstats.ts",
     "translate:batch": "tsx scripts/translate-batch.ts"
   },
   "dependencies": {
