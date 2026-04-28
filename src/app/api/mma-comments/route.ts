@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { boardPosts, fighters, fights, mmaComments, mmaEvents } from "@/db/schema";
+import { getCurrentSession } from "@/lib/auth/session";
 
 const VALID_TARGETS = ["post", "fighter", "event", "fight"] as const;
 type TargetType = (typeof VALID_TARGETS)[number];
@@ -76,6 +77,7 @@ export async function GET(req: NextRequest) {
 // body: { targetType, targetId, nickname, content, fingerprint?, parentId? }
 export async function POST(req: NextRequest) {
   try {
+    const session = await getCurrentSession();
     const body = await req.json();
     const { targetType, targetId, nickname, content, parentId } = body as {
       targetType: string;
@@ -85,14 +87,16 @@ export async function POST(req: NextRequest) {
       parentId?: number;
     };
 
-    if (!isValidTarget(targetType) || !targetId || !nickname || !content) {
+    const resolvedNickname = session?.nickname ?? nickname;
+
+    if (!isValidTarget(targetType) || !targetId || !resolvedNickname || !content) {
       return NextResponse.json(
         { success: false, error: "targetType, targetId, nickname, content 필수." },
         { status: 400 }
       );
     }
 
-    if (nickname.length > 20) {
+    if (resolvedNickname.length > 20) {
       return NextResponse.json(
         { success: false, error: "닉네임은 20자 이내." },
         { status: 400 }
@@ -144,7 +148,8 @@ export async function POST(req: NextRequest) {
       .values({
         targetType,
         targetId: numericTargetId,
-        authorNickname: nickname.trim(),
+        authorId: session?.sub ?? null,
+        authorNickname: resolvedNickname.trim(),
         content: content.trim(),
         parentId: parentId == null ? null : Number(parentId),
       })

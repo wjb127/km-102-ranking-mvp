@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
-import { requireSession } from "@/lib/auth/guard";
+import { getCurrentSession } from "@/lib/auth/session";
 
 // ── POST /api/upload ──
 // Cloudinary 시그니처 생성. 클라이언트가 이 값을 받아 바로 Cloudinary로 업로드.
@@ -22,9 +22,15 @@ import { requireSession } from "@/lib/auth/guard";
 //   fd.append("folder", folder);
 //   fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body: fd });
 
-export async function POST() {
-  const { session, response } = await requireSession();
-  if (response) return response;
+function normalizeFolderSegment(input: string): string {
+  return input.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64);
+}
+
+export async function POST(req: Request) {
+  const session = await getCurrentSession();
+  const body = await req.json().catch(() => ({}));
+  const fingerprintRaw =
+    typeof body.fingerprint === "string" ? body.fingerprint.trim() : "";
 
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;
@@ -41,8 +47,15 @@ export async function POST() {
     );
   }
 
-  // 폴더는 역할 기반 분리 (admin 이면 선수 사진 업로드 가능한 경로)
-  const folder = session!.role === "admin" ? "mma/fighters" : `mma/users/${session!.sub}`;
+  // 폴더는 역할 기반 분리
+  // - admin: 선수/운영 이미지
+  // - login user: 사용자별 폴더
+  // - anon: 익명 글 첨부용 폴더
+  const folder = session?.role === "admin"
+    ? "mma/fighters"
+    : session
+      ? `mma/users/${normalizeFolderSegment(session.sub)}`
+      : `mma/anonymous/${normalizeFolderSegment(fingerprintRaw || `anon_${Date.now()}`)}`;
   const timestamp = Math.floor(Date.now() / 1000);
 
   // Cloudinary signature: 파라미터를 key=value 로 정렬하여 연결 + api_secret sha1
