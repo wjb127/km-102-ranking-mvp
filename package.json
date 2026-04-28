@@ -9,6 +9,7 @@
     "lint": "eslint",
     "sync:mma": "tsx scripts/sync-balldontlie.ts",
     "sync:mma:fights": "tsx scripts/sync-balldontlie.ts --fights",
+    "crawl:ufcstats": "tsx scripts/crawl-ufcstats.ts",
     "translate:batch": "tsx scripts/translate-batch.ts"
   },
   "dependencies": {
