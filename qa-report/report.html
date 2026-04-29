@@ -43,10 +43,10 @@
     <strong>도구</strong>: Playwright MCP (Chromium, 데스크톱 1440x900 / 모바일 375x812)
   </div>
   <div class="summary">
-    <div class="stat"><div class="num">28</div><div class="lbl">스크린샷</div></div>
+    <div class="stat"><div class="num">35</div><div class="lbl">스크린샷</div></div>
     <div class="stat"><div class="num">11/11</div><div class="lbl">계약 기능 도달</div></div>
+    <div class="stat"><div class="num">4/6</div><div class="lbl">우선순위 이슈 수정</div></div>
     <div class="stat"><div class="num">8089</div><div class="lbl">선수 DB</div></div>
-    <div class="stat"><div class="num">30</div><div class="lbl">게시판 시드 글</div></div>
   </div>
 </header>
 <main>
@@ -193,13 +193,47 @@
 
   <h3>우선순위 수정 권장</h3>
   <ol>
-    <li><strong>P0</strong> — 회원가입/로그인 라이트 테마 잔재 (다크 일관성).</li>
-    <li><strong>P0</strong> — 선수 프로필 전적 0/0/0 (집계/표시 누락).</li>
-    <li><strong>P1</strong> — GOAT 푸터 합계 미반영 (캐시·재조회 동기화).</li>
-    <li><strong>P1</strong> — 게시판 시드 댓글 0개와 [N] 카운트 불일치.</li>
-    <li><strong>P2</strong> — 모바일 홈 인기 TOP3 가림(하단 네비 padding).</li>
-    <li><strong>P2</strong> — 한글 번역 누락 선수 배치 보강.</li>
+    <li><strong>P0</strong> — 회원가입/로그인 라이트 테마 잔재 (다크 일관성). <span class="badge ok">FIXED ✓</span></li>
+    <li><strong>P0</strong> — 선수 프로필 전적 0/0/0 (집계/표시 누락). <span class="badge ok">FIXED ✓</span></li>
+    <li><strong>P1</strong> — GOAT 푸터 합계 미반영 (캐시·재조회 동기화). <span class="badge ok">FIXED ✓</span></li>
+    <li><strong>P1</strong> — 게시판 시드 댓글 0개와 [N] 카운트 불일치. <span class="badge warn">미수정</span></li>
+    <li><strong>P2</strong> — 모바일 홈 인기 TOP3 가림(하단 네비 padding). <span class="badge ok">FIXED ✓</span></li>
+    <li><strong>P2</strong> — 한글 번역 누락 선수 배치 보강. <span class="badge warn">미수정</span></li>
   </ol>
+</div>
+
+<h2>Y. Fix 재검증 (커밋 <code>93a6e19</code>) <span class="badge ok">PROD VERIFIED</span></h2>
+<div class="scenario">
+  <p>4건 수정 후 prod (<code>https://km-102-ranking-mvp.vercel.app</code>) 재배포. Playwright로 5개 시나리오 재검증.</p>
+
+  <h3>P0-1: 회원가입 다크 테마</h3>
+  <figure><img src="screenshots/29-fix-register-dark.png"><figcaption>29 — 회원가입 토큰 적용 (bg-background, bg-surface, border-border, text-foreground). 라이트 잔재 제거.</figcaption></figure>
+
+  <h3>P0-2: 로그인 다크 테마</h3>
+  <figure><img src="screenshots/30-fix-login-dark.png"><figcaption>30 — 로그인 동일 토큰 적용. 테스트 계정 안내 영역도 다크 톤.</figcaption></figure>
+
+  <h3>P0-3: 선수 프로필 전적 표시</h3>
+  <figure><img src="screenshots/31-fix-fighter-records.png"><figcaption>31 — 코너 맥그리거 <strong>22승 6패 0무</strong> 표시 (이전: 0/0/0). API 응답에서 <code>careerWins/careerLosses/careerDraws/careerNoContests</code>를 <code>wins/losses/draws/noContests</code>로 매핑.</figcaption></figure>
+
+  <h3>P1: GOAT 푸터 합계 갱신</h3>
+  <div class="grid2">
+    <figure><img src="screenshots/32-fix-vote-before.png"><figcaption>32 — P4P 투표 후 푸터 "전체 투표 <strong>1표</strong> 참여중"</figcaption></figure>
+    <figure><img src="screenshots/33-fix-vote-after.png"><figcaption>33 — 헤비급 추가 투표 직후 "전체 투표 <strong>2표</strong> 참여중"으로 즉시 갱신. <code>mutateCategories()</code>를 POST 후 동시 호출.</figcaption></figure>
+  </div>
+
+  <h3>P2: 모바일 하단 네비 가림</h3>
+  <div class="grid2">
+    <figure><img src="screenshots/34-fix-mobile-top3.png"><figcaption>34 — 모바일 375x812 인기 TOP3 영역. AJ McKee · 권아솔 · 아론 블랙웰 카드 모두 노출.</figcaption></figure>
+    <figure><img src="screenshots/35-fix-mobile-bottom-clear.png"><figcaption>35 — 모바일 하단 스크롤 끝. 마지막 게시글 "오늘자 사이드킥 모음 gif"까지 하단 네비와 겹치지 않음. <code>pb-[calc(4rem+env(safe-area-inset-bottom)+1rem)]</code> 적용.</figcaption></figure>
+  </div>
+
+  <h3>코드 변경 요약</h3>
+  <ul>
+    <li><code>src/app/login/page.tsx</code>, <code>src/app/register/page.tsx</code> — 토큰 클래스 전환</li>
+    <li><code>src/app/api/mma-fighters/[id]/route.ts</code> — 응답 객체에서 <code>career*</code> → <code>wins/losses/draws/noContests</code> 명시 매핑</li>
+    <li><code>src/app/vote/page.tsx</code> — 카테고리 SWR <code>mutate</code> 캡처 + POST 성공/실패 양쪽에서 동시 호출, deps 보강</li>
+    <li><code>src/app/layout.tsx</code> — body padding을 safe-area 포함 <code>calc()</code>로 교체</li>
+  </ul>
 </div>
 
 <h2>역질문 (의문점)</h2>
