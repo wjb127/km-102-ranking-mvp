@@ -236,18 +236,6 @@
   </ul>
 </div>
 
-<h2>역질문 (의문점)</h2>
-<ul class="questions">
-  <li><strong>1. balldontlie /fights 유료 결제 여부</strong> — 파이트 단위 결과/메서드/라운드는 유료 티어. 결제 예정인지, 아니면 ufcstats 추가 크롤링으로 대체할지 의사 결정 필요. 선수 프로필 0/0/0 문제 직결.</li>
-  <li><strong>2. 게시판 작성자와 회원 연결</strong> — 현재 <code>posts.author_nickname</code>은 자유 입력. 1:1 쪽지를 게시글 작성자에게 보내려면 <code>users.id</code> FK 필요. 계약 ①-10 "회원 간 쪽지" 범위가 회원-회원만으로 한정되는지 확인.</li>
-  <li><strong>3. NextAuth vs 자체 JWT</strong> — 계약서 표현은 "NextAuth"인데 실 구현은 bcrypt + jose 기반 자체 JWT. 스키마(accounts/sessions 테이블) 흔적은 남아있음. 계약 표현 수정 vs NextAuth 마이그레이션 중 어느 쪽?</li>
-  <li><strong>4. 관리자 권한 부여 절차</strong> — <code>users.role = 'admin'</code> 수동 SQL 외에 부여 흐름이 있는지. 클라이언트 데모/검수용 관리자 계정 발급 가능?</li>
-  <li><strong>5. 시드 데이터 정책</strong> — 게시판 30개 글의 추천/조회/댓글 [N] 숫자가 의도된 시드인지, 댓글 본문은 의도적으로 비워둔 건지. 운영 전 정리 필요?</li>
-  <li><strong>6. 한글 번역 스코프</strong> — 모든 8089명 + 모든 이벤트를 DeepL 배치 돌리면 비용/시간 어느 정도 예산? 부분 번역 유지 vs 전수 번역 어느 쪽 선호?</li>
-  <li><strong>7. 라이트/다크 모드 정책</strong> — 시스템 prefers-color-scheme 자동 감지 + 토글 두 가지 다 지원하는데, 회원가입/로그인 페이지만 라이트 고정인 건 의도? 다크가 default라면 수정 권장.</li>
-  <li><strong>8. 상용 트래픽 기준 레이트 리밋</strong> — 익명 업로드 10/10분, 로그인 30/10분이 in-memory Map. 다중 인스턴스 환경(Vercel)에서 세션 간 일관성 깨짐. KV/Redis 도입 시점?</li>
-</ul>
-
 </main>
 </body>
 </html>
