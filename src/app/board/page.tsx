@@ -15,6 +15,7 @@ import {
   Loader2,
   Flame,
 } from "lucide-react";
+import { getFingerprint } from "@/lib/fingerprint";
 import { cn } from "@/lib/utils";
 
 // ── 타입 ──
@@ -223,21 +224,35 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
     setUploading(true);
     setError("");
     try {
-      const sigRes = await fetch("/api/upload", { method: "POST" });
+      const fingerprint = await getFingerprint();
+      const sigRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fingerprint }),
+      });
       if (!sigRes.ok) {
         const j = await sigRes.json().catch(() => ({}));
-        setError(j.error ?? "이미지 업로드는 로그인 후 이용할 수 있습니다.");
+        setError(j.error ?? "이미지 업로드에 실패했습니다.");
         return;
       }
       const { data: sig } = await sigRes.json();
       const uploaded: string[] = [];
       for (const file of files) {
+        const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+        if (!sig.allowedFormats.includes(ext)) {
+          throw new Error("허용되지 않는 이미지 형식");
+        }
+        if (file.size > sig.maxFileSize) {
+          throw new Error("파일 용량 초과");
+        }
         const fd = new FormData();
         fd.append("file", file);
         fd.append("api_key", sig.apiKey);
         fd.append("timestamp", String(sig.timestamp));
         fd.append("signature", sig.signature);
         fd.append("folder", sig.folder);
+        fd.append("allowed_formats", sig.allowedFormats.join(","));
+        fd.append("max_file_size", String(sig.maxFileSize));
         const upRes = await fetch(sig.uploadUrl, { method: "POST", body: fd });
         if (!upRes.ok) throw new Error("Cloudinary 업로드 실패");
         const upJson = await upRes.json();

@@ -14,7 +14,7 @@ import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" });
 loadEnv();
 
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "../src/db";
 import {
   fighterOrgRecords,
@@ -155,6 +155,10 @@ function inchToCm(inches: number | null | undefined): string | null {
   return (inches * 2.54).toFixed(2);
 }
 
+function normalizeName(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 function buildFighterValues(fighter: BDLFighter) {
   const birthDate = fighter.date_of_birth ? fighter.date_of_birth.slice(0, 10) : null;
   const fullName =
@@ -241,34 +245,68 @@ async function upsertFighter(fighter: BDLFighter): Promise<number> {
   if (fighterCache.has(fighter.id)) return fighterCache.get(fighter.id)!;
 
   const values = buildFighterValues(fighter);
-  const [row] = await db
-    .insert(fighters)
-    .values(values)
-    .onConflictDoUpdate({
-      target: fighters.externalId,
-      set: {
-        fullName: values.fullName,
-        nickname: values.nickname,
-        weightClass: values.weightClass,
-        nationality: values.nationality,
-        birthDate: values.birthDate,
-        heightCm: values.heightCm,
-        reachCm: values.reachCm,
-        careerWins: values.careerWins,
-        careerLosses: values.careerLosses,
-        careerDraws: values.careerDraws,
-        careerNoContests: values.careerNoContests,
-        isActive: values.isActive,
-        weightLbs: values.weightLbs,
-        stance: values.stance,
-        birthPlace: values.birthPlace,
-        gender: values.gender,
-        weightClassAbbr: values.weightClassAbbr,
-        weightLimitLbs: values.weightLimitLbs,
-        updatedAt: new Date(),
-      },
-    })
-    .returning({ id: fighters.id });
+  const updatePayload = {
+    externalId: values.externalId,
+    fullName: values.fullName,
+    nickname: values.nickname,
+    weightClass: values.weightClass,
+    nationality: values.nationality,
+    birthDate: values.birthDate,
+    heightCm: values.heightCm,
+    reachCm: values.reachCm,
+    careerWins: values.careerWins,
+    careerLosses: values.careerLosses,
+    careerDraws: values.careerDraws,
+    careerNoContests: values.careerNoContests,
+    isActive: values.isActive,
+    weightLbs: values.weightLbs,
+    stance: values.stance,
+    birthPlace: values.birthPlace,
+    gender: values.gender,
+    weightClassAbbr: values.weightClassAbbr,
+    weightLimitLbs: values.weightLimitLbs,
+    updatedAt: new Date(),
+  };
+
+  const [existing] = await db
+    .select({ id: fighters.id })
+    .from(fighters)
+    .where(eq(fighters.externalId, fighter.id))
+    .limit(1);
+
+  let row: { id: number };
+  if (existing) {
+    [row] = await db
+      .update(fighters)
+      .set(updatePayload)
+      .where(eq(fighters.id, existing.id))
+      .returning({ id: fighters.id });
+  } else {
+    const normalized = normalizeName(values.fullName);
+    const [mergeCandidate] = await db
+      .select({ id: fighters.id })
+      .from(fighters)
+      .where(
+        and(
+          isNull(fighters.externalId),
+          sql`lower(${fighters.fullName}) = ${normalized}`
+        )
+      )
+      .limit(1);
+
+    if (mergeCandidate) {
+      [row] = await db
+        .update(fighters)
+        .set(updatePayload)
+        .where(eq(fighters.id, mergeCandidate.id))
+        .returning({ id: fighters.id });
+    } else {
+      [row] = await db
+        .insert(fighters)
+        .values(values)
+        .returning({ id: fighters.id });
+    }
+  }
 
   fighterCache.set(fighter.id, row.id);
   return row.id;
@@ -502,25 +540,27 @@ async function rebuildFighterRecordsFromFights() {
     }
   }
 
-  await db.delete(fighterOrgRecords);
-
   const orgRecordValues = [...orgRecordMap.values()];
-  if (orgRecordValues.length > 0) {
-    await db.insert(fighterOrgRecords).values(orgRecordValues);
-  }
+  await db.transaction(async (tx) => {
+    await tx.delete(fighterOrgRecords);
 
-  for (const [fighterId, totals] of fighterTotals.entries()) {
-    await db
-      .update(fighters)
-      .set({
-        careerWins: totals.wins,
-        careerLosses: totals.losses,
-        careerDraws: totals.draws,
-        careerNoContests: totals.noContests,
-        updatedAt: new Date(),
-      })
-      .where(eq(fighters.id, fighterId));
-  }
+    if (orgRecordValues.length > 0) {
+      await tx.insert(fighterOrgRecords).values(orgRecordValues);
+    }
+
+    for (const [fighterId, totals] of fighterTotals.entries()) {
+      await tx
+        .update(fighters)
+        .set({
+          careerWins: totals.wins,
+          careerLosses: totals.losses,
+          careerDraws: totals.draws,
+          careerNoContests: totals.noContests,
+          updatedAt: new Date(),
+        })
+        .where(eq(fighters.id, fighterId));
+    }
+  });
 
   console.log(
     `=== 선수 전적 재계산 완료: 전적 ${orgRecordValues.length}건 / 선수 ${fighterTotals.size}명 ===`
@@ -624,6 +664,11 @@ async function main() {
       .join(", ")}`
   );
   console.log(`  per_page=${PER_PAGE}  page_limit=${PAGE_LIMIT === Infinity ? "∞" : PAGE_LIMIT}`);
+
+  if (runFights && PAGE_LIMIT !== Infinity) {
+    console.error("--fights 실행 시에는 --limit 을 사용할 수 없습니다. 부분 동기화로 전적 재계산이 깨질 수 있습니다.");
+    process.exit(1);
+  }
 
   const startedAt = Date.now();
 

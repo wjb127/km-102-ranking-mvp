@@ -30,6 +30,7 @@ export interface BoardPostDTO {
   content: string;
   author: string;
   hasImage: boolean;
+  imageUrls: string[];
   views: number;
   likes: number;
   commentCount: number;
@@ -55,6 +56,7 @@ export function rowToDto(row: {
     content: row.content,
     author: row.authorNickname,
     hasImage: (row.imageUrls?.length ?? 0) > 0,
+    imageUrls: row.imageUrls ?? [],
     views: row.viewCount,
     likes: row.likeCount,
     commentCount: row.commentCount,

@@ -5,7 +5,6 @@ import {
   desc,
   eq,
   gte,
-  ilike,
   inArray,
   sql,
 } from "drizzle-orm";
@@ -126,7 +125,7 @@ async function loadCategoryCandidates(category: CategorySlug) {
       .where(
         and(
           eq(fightersTbl.isActive, true),
-          ilike(fightersTbl.weightClass, "%Heavyweight%"),
+          eq(fightersTbl.weightClass, "Heavyweight"),
           gte(totalFights, 3)
         )
       )

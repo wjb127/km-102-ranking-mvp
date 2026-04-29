@@ -25,6 +25,7 @@ interface BoardPost {
   content: string;
   author: string;
   hasImage: boolean;
+  imageUrls: string[];
   views: number;
   likes: number;
   commentCount: number;
@@ -231,6 +232,23 @@ export default function BoardDetailPage() {
               <p className="text-foreground/90 text-sm md:text-base leading-relaxed whitespace-pre-wrap">
                 {post.content}
               </p>
+              {post.imageUrls.length > 0 && (
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {post.imageUrls.map((url, index) => (
+                    <div
+                      key={`${url}-${index}`}
+                      className="overflow-hidden rounded-xl border border-border bg-surface"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`첨부 이미지 ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* ── 추천 버튼 ── */}
