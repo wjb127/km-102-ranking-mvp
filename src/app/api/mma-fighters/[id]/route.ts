@@ -14,15 +14,41 @@ export async function GET(
     return NextResponse.json({ success: false, error: "잘못된 id." }, { status: 400 });
   }
 
-  const [fighter] = await db
+  const [fighterRow] = await db
     .select()
     .from(fighters)
     .where(eq(fighters.id, fighterId))
     .limit(1);
 
-  if (!fighter) {
+  if (!fighterRow) {
     return NextResponse.json({ success: false, error: "선수를 찾을 수 없습니다." }, { status: 404 });
   }
+
+  const fighter = {
+    id: fighterRow.id,
+    externalId: fighterRow.externalId,
+    fullName: fighterRow.fullName,
+    fullNameKo: fighterRow.fullNameKo,
+    nickname: fighterRow.nickname,
+    nicknameKo: fighterRow.nicknameKo,
+    weightClass: fighterRow.weightClass,
+    nationality: fighterRow.nationality,
+    nationalityKo: fighterRow.nationalityKo,
+    imageUrl: fighterRow.imageUrl,
+    isActive: fighterRow.isActive,
+    heightCm: fighterRow.heightCm,
+    reachCm: fighterRow.reachCm,
+    bio: fighterRow.bio,
+    bioKo: fighterRow.bioKo,
+    birthDate: fighterRow.birthDate,
+    wins: fighterRow.careerWins,
+    losses: fighterRow.careerLosses,
+    draws: fighterRow.careerDraws,
+    noContests: fighterRow.careerNoContests,
+    winsByKo: 0,
+    winsBySub: 0,
+    winsByDec: 0,
+  };
 
   const orgRows = await db
     .select({

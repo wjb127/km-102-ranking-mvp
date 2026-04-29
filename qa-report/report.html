@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MMA 분석 커뮤니티 — Playwright QA 리포트</title>
+<style>
+  :root { --bg:#0b0d10; --fg:#e6e8eb; --mut:#9aa3ad; --pri:#ef4444; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --card:#15181d; --br:#262a30; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Pretendard,sans-serif; line-height:1.55; }
+  header { padding:48px 24px 24px; max-width:1100px; margin:0 auto; }
+  h1 { font-size:32px; margin:0 0 8px; }
+  h2 { font-size:22px; border-bottom:1px solid var(--br); padding-bottom:8px; margin-top:48px; }
+  h3 { font-size:16px; margin:20px 0 8px; color:var(--fg); }
+  .meta { color:var(--mut); font-size:14px; }
+  main { max-width:1100px; margin:0 auto; padding:0 24px 80px; }
+  .summary { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:12px; margin:24px 0; }
+  .stat { background:var(--card); border:1px solid var(--br); border-radius:10px; padding:14px; }
+  .stat .num { font-size:24px; font-weight:700; }
+  .stat .lbl { color:var(--mut); font-size:13px; }
+  .scenario { background:var(--card); border:1px solid var(--br); border-radius:12px; padding:18px; margin:18px 0; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:600; }
+  .ok { background:rgba(34,197,94,0.15); color:var(--ok); }
+  .warn { background:rgba(245,158,11,0.15); color:var(--warn); }
+  .bad { background:rgba(239,68,68,0.15); color:var(--bad); }
+  figure { margin:14px 0; }
+  figure img { width:100%; max-width:900px; border:1px solid var(--br); border-radius:8px; display:block; }
+  figcaption { color:var(--mut); font-size:13px; margin-top:6px; }
+  ul { padding-left:18px; }
+  li { margin:4px 0; }
+  code { background:#1c2026; padding:1px 6px; border-radius:4px; font-size:13px; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(380px,1fr)); gap:14px; }
+  hr { border:none; border-top:1px solid var(--br); margin:32px 0; }
+  .questions li { background:#1a1d22; padding:10px 14px; border-radius:8px; margin:8px 0; border-left:3px solid var(--pri); }
+</style>
+</head>
+<body>
+<header>
+  <h1>MMA 분석 커뮤니티 — Playwright QA 리포트</h1>
+  <div class="meta">
+    <strong>대상</strong>: <code>https://km-102-ranking-mvp.vercel.app</code> ·
+    <strong>기준</strong>: 계약서 제2조 ① 11개 기능 + ② 데이터 셋업 ·
+    <strong>도구</strong>: Playwright MCP (Chromium, 데스크톱 1440x900 / 모바일 375x812)
+  </div>
+  <div class="summary">
+    <div class="stat"><div class="num">28</div><div class="lbl">스크린샷</div></div>
+    <div class="stat"><div class="num">11/11</div><div class="lbl">계약 기능 도달</div></div>
+    <div class="stat"><div class="num">8089</div><div class="lbl">선수 DB</div></div>
+    <div class="stat"><div class="num">30</div><div class="lbl">게시판 시드 글</div></div>
+  </div>
+</header>
+<main>
+
+<h2>A. 홈 / 네비게이션 <span class="badge ok">PASS</span></h2>
+<div class="scenario">
+  <p>다크 테마 히어로, 실시간 캐러셀(공지·HOT 게시글·신규 선수·이벤트), 4 quick action 카드(선수/일정/투표/게시판), 인기 선수 TOP 3, 예정 경기, 실시간 게시판 모듈. 비로그인 상태에서 로그인/회원가입 노출.</p>
+  <figure><img src="screenshots/01-home-desktop.png" alt="홈 데스크톱"><figcaption>01 — 데스크톱 홈 (1440x900). 예정 경기·실시간 게시판 영역은 비어있음 (시드 데이터 부재).</figcaption></figure>
+</div>
+
+<h2>B. GOAT 투표 (계약 ①-1) <span class="badge ok">PASS</span> <span class="badge warn">경미한 버그</span></h2>
+<div class="scenario">
+  <p>5개 카테고리(P4P / 헤비급 / 라이트급 / KO 아티스트 / 서브미션 아티스트). DB 기반 동적 후보 5명 노출. 카테고리당 1표, 토글 취소 가능.</p>
+  <div class="grid2">
+    <figure><img src="screenshots/02-vote-list.png"><figcaption>02 — 카테고리 5개 노출 (스켈레톤 로딩)</figcaption></figure>
+    <figure><img src="screenshots/03-vote-pfp-candidates.png"><figcaption>03 — P4P 후보: Dan Severn, Jeremy Horn 등 (영문)</figcaption></figure>
+    <figure><img src="screenshots/04-vote-pfp-after-vote.png"><figcaption>04 — Dan Severn 1표 100% / 버튼 "투표함" 으로 전환</figcaption></figure>
+    <figure><img src="screenshots/05-vote-heavyweight.png"><figcaption>05 — 헤비급: 벤 로스웰, 알렉산더 볼코프 (한글 번역 적용)</figcaption></figure>
+    <figure><img src="screenshots/06-vote-ko-artist.png"><figcaption>06 — KO 아티스트: 한글/영문 혼재 (코너 맥그리거 + Dan Severn)</figcaption></figure>
+  </div>
+  <h3>발견 이슈</h3>
+  <ul>
+    <li><span class="badge warn">버그</span> 04 화면에서 "전체 투표 <strong>0표</strong> 참여중" 표시 — 1표 들어갔는데 합계 미갱신.</li>
+    <li><span class="badge warn">UX</span> 카테고리별 후보 한글/영문 번역 일관성 부족 (P4P/KO는 영문, 헤비급은 한글).</li>
+  </ul>
+</div>
+
+<h2>C. 선수 검색 / 프로필 / 댓글 (계약 ①-2) <span class="badge ok">PASS</span> <span class="badge warn">데이터 갭</span></h2>
+<div class="scenario">
+  <p>전체 8089명 중 60명 표시 + "더 보기" 페이지네이션. 한글/영문 동시 검색, 체급/현역 필터, 정렬 옵션. 프로필 상세에 댓글 시스템.</p>
+  <div class="grid2">
+    <figure><img src="screenshots/07-fighters-list.png"><figcaption>07 — 선수 목록 (전체 8089명, 60명 표시)</figcaption></figure>
+    <figure><img src="screenshots/08-fighters-search-mcgregor.png"><figcaption>08 — 검색 입력 "맥그리거" (debounce 전)</figcaption></figure>
+    <figure><img src="screenshots/09-fighters-search-result.png"><figcaption>09 — 한글 검색 결과 2명 (코너 맥그리거 외)</figcaption></figure>
+    <figure><img src="screenshots/10-fighter-profile-mcgregor.png"><figcaption>10 — 프로필 (전적 0/0/0 — 데이터 갭)</figcaption></figure>
+    <figure><img src="screenshots/11-fighter-comment-posted.png"><figcaption>11 — 댓글 등록 성공 (QA봇 / "GOAT 인정")</figcaption></figure>
+  </div>
+  <h3>발견 이슈</h3>
+  <ul>
+    <li><span class="badge bad">중대</span> 프로필의 "전적 (전체 합산)"이 0/0/0. 목록 카드는 22-6-0 표시. <code>fighter_org_records</code> 집계 로직과 <code>fighters.career_*</code> 컬럼 사이 연동 누락. /fights 엔드포인트 유료 티어라 실데이터 부재일 가능성도 있음.</li>
+    <li><span class="badge warn">데이터</span> "최근 경기: 경기 기록이 없습니다" — 동일 원인.</li>
+  </ul>
+</div>
+
+<h2>D. 경기 일정 + 댓글 (계약 ①-7) <span class="badge ok">PASS</span></h2>
+<div class="scenario">
+  <p>예정 / 종료 분리, 단체 배지(UFC/PFL), 일시·장소·국가 표시. 상세 페이지에 일시·장소·단체·파이트 카드·댓글.</p>
+  <div class="grid2">
+    <figure><img src="screenshots/12-events-list.png"><figcaption>12 — 일정 목록 (예정 + 종료 섹션)</figcaption></figure>
+    <figure><img src="screenshots/13-event-detail.png"><figcaption>13 — UFC 파이트 나이트 상세. 파이트 카드 비어있음.</figcaption></figure>
+  </div>
+  <h3>발견 이슈</h3>
+  <ul>
+    <li><span class="badge warn">데이터</span> 파이트 카드 비어있음 — balldontlie /fights 엔드포인트 유료. 계약 제2조 ②항의 "선수 프로필 / 전적 (초기): ufcstats.com 1회성 크롤링"으로는 fight 단위 데이터 미확보.</li>
+  </ul>
+</div>
+
+<h2>E·F. 게시판 / 추천 / 이미지 (계약 ①-8, ①-9) <span class="badge ok">PASS</span> <span class="badge warn">시드 데이터</span></h2>
+<div class="scenario">
+  <p>분석/토론/자유 분류 + 베스트/실시간 탭. 글쓰기 모달(카테고리·닉네임·제목·내용·이미지 첨부 최대 3장). 추천·조회수·댓글 카운트.</p>
+  <div class="grid2">
+    <figure><img src="screenshots/14-board-list.png"><figcaption>14 — 게시판 목록 (총 30개)</figcaption></figure>
+    <figure><img src="screenshots/15-board-filter-discussion.png"><figcaption>15 — "토론" 필터: 12개 표시</figcaption></figure>
+    <figure><img src="screenshots/16-board-post-detail.png"><figcaption>16 — 글 상세 (조회 5522 / 추천 312)</figcaption></figure>
+    <figure><img src="screenshots/17-board-post-recommend.png"><figcaption>17 — 추천 클릭 후 313 으로 증가, 버튼 활성화 표시</figcaption></figure>
+    <figure><img src="screenshots/18-board-write-modal.png"><figcaption>18 — 글쓰기 폼 (사진 첨부 최대 3장 포함)</figcaption></figure>
+  </div>
+  <h3>발견 이슈</h3>
+  <ul>
+    <li><span class="badge warn">데이터</span> 목록의 <code>[89]</code> 댓글 카운트는 시드 더미값. 상세 페이지에서는 "아직 댓글이 없습니다" 노출 — 시드 댓글 미적재.</li>
+  </ul>
+</div>
+
+<h2>G·H. 회원가입 / 로그인 / 쪽지 (계약 ①-10) <span class="badge ok">PASS</span> <span class="badge warn">UX</span></h2>
+<div class="scenario">
+  <p>이메일·닉네임·비밀번호 가입 → 자동 로그인. 쪽지함(받은/보낸) + 모달 작성. 본인 보호/대상 검증.</p>
+  <div class="grid2">
+    <figure><img src="screenshots/19-register.png"><figcaption>19 — 회원가입 폼</figcaption></figure>
+    <figure><img src="screenshots/20-after-register-home.png"><figcaption>20 — 가입 후 자동 로그인 (qabot21921 표시)</figcaption></figure>
+    <figure><img src="screenshots/21-messages.png"><figcaption>21 — 쪽지함 (받은/보낸 탭)</figcaption></figure>
+    <figure><img src="screenshots/22-message-compose.png"><figcaption>22 — 쪽지 쓰기 모달</figcaption></figure>
+    <figure><img src="screenshots/23-message-self-block.png"><figcaption>23 — 본인 발송 차단: "본인에게는 쪽지를 보낼 수 없습니다"</figcaption></figure>
+    <figure><img src="screenshots/24-message-send-error.png"><figcaption>24 — 게시판 닉네임(LetsGoChamp) 입력 시 "사용자 없음" — 멤버 미연결</figcaption></figure>
+    <figure><img src="screenshots/26-profile.png"><figcaption>26 — 프로필 페이지 (닉네임·비번 변경, 내 글/댓글, 회원 탈퇴)</figcaption></figure>
+  </div>
+  <h3>발견 이슈</h3>
+  <ul>
+    <li><span class="badge bad">중대</span> 회원가입/로그인 페이지가 <strong>다크 모드 미지원</strong> — 흰 배경 카드, 나머지 페이지는 다크. 테마 일관성 깨짐.</li>
+    <li><span class="badge warn">제약</span> 게시글 작성자는 비회원 닉네임이라 쪽지 발송 불가. 게시판 닉네임을 회원과 연결하지 않으면 1:1 쪽지 시나리오가 사실상 회원 끼리만 가능.</li>
+  </ul>
+</div>
+
+<h2>I. 관리자 보호 (계약 ①-5) <span class="badge ok">PASS</span></h2>
+<div class="scenario">
+  <p>비관리자 계정으로 <code>/admin</code> 접근 시 홈으로 리다이렉트.</p>
+  <figure><img src="screenshots/25-admin-blocked.png"><figcaption>25 — /admin 접근 시 홈 리다이렉트</figcaption></figure>
+  <h3>미검증 항목</h3>
+  <ul>
+    <li>관리자 계정 미보유로 인해 실제 보정 UI(전적/순위 수동 보정, 게시글 삭제) 동작은 미테스트.</li>
+  </ul>
+</div>
+
+<h2>J. 한국어 번역 (계약 ①-6) <span class="badge warn">부분</span></h2>
+<div class="scenario">
+  <p>DeepL 배치(<code>scripts/translate-batch.ts</code>) 일부 적용. 헤비급/라이트급은 한글 풀세트, P4P 카테고리는 미번역, KO 아티스트는 혼재.</p>
+  <ul>
+    <li>UI 라벨/네비/버튼은 100% 한글.</li>
+    <li>선수명·이벤트명 번역률 60~70% 추정 — 배치 재실행 또는 우선순위 큐 필요.</li>
+  </ul>
+</div>
+
+<h2>K. 반응형 (계약 ①-11) <span class="badge ok">PASS</span></h2>
+<div class="scenario">
+  <p>375x812 (iPhone 12 Mini) 기준 모바일 검증.</p>
+  <div class="grid2">
+    <figure><img src="screenshots/27-home-mobile.png"><figcaption>27 — 홈 모바일 (하단 네비 4탭 + 2x2 quick action)</figcaption></figure>
+    <figure><img src="screenshots/28-board-mobile.png"><figcaption>28 — 게시판 모바일 (테이블 → 카드 변환)</figcaption></figure>
+  </div>
+  <h3>발견 이슈</h3>
+  <ul>
+    <li><span class="badge warn">레이아웃</span> 모바일 홈에서 "인기 선수 TOP 3" 카드가 하단 fixed 네비 뒤에 가려짐 (3장 모두 보이지 않고 빈 영역만 노출).</li>
+    <li><span class="badge warn">UX</span> 상단 헤더의 "쪽지 / qabot21921 / 로그아웃" 텍스트가 모바일에서 잘림 (로그아웃 → 로...).</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2>전체 요약</h2>
+<div class="scenario">
+  <h3>계약 11개 기능 매핑</h3>
+  <ul>
+    <li>① GOAT 투표 — <span class="badge ok">PASS</span></li>
+    <li>② 선수 정보·전적 — <span class="badge warn">데이터 갭</span> (목록 OK, 프로필 전적 0/0/0)</li>
+    <li>③ 게시판(분석/토론/자유) — <span class="badge ok">PASS</span></li>
+    <li>④ 검색·필터·정렬 — <span class="badge ok">PASS</span></li>
+    <li>⑤ 관리자 수동 보정 — <span class="badge warn">UI 미검증</span> (보호 라우팅만 확인)</li>
+    <li>⑥ 한국어 번역 — <span class="badge warn">부분 적용</span></li>
+    <li>⑦ 경기 일정·댓글 — <span class="badge ok">PASS</span> (파이트 카드 데이터만 부재)</li>
+    <li>⑧ 게시판 카테고리·필터 — <span class="badge ok">PASS</span></li>
+    <li>⑨ 게시글 추천·이미지 — <span class="badge ok">PASS</span></li>
+    <li>⑩ 회원가입·로그인·쪽지 — <span class="badge ok">PASS</span> (테마 + 회원 연결 이슈)</li>
+    <li>⑪ 모바일 반응형 — <span class="badge ok">PASS</span> (TOP3 가림 미세 이슈)</li>
+  </ul>
+
+  <h3>우선순위 수정 권장</h3>
+  <ol>
+    <li><strong>P0</strong> — 회원가입/로그인 라이트 테마 잔재 (다크 일관성).</li>
+    <li><strong>P0</strong> — 선수 프로필 전적 0/0/0 (집계/표시 누락).</li>
+    <li><strong>P1</strong> — GOAT 푸터 합계 미반영 (캐시·재조회 동기화).</li>
+    <li><strong>P1</strong> — 게시판 시드 댓글 0개와 [N] 카운트 불일치.</li>
+    <li><strong>P2</strong> — 모바일 홈 인기 TOP3 가림(하단 네비 padding).</li>
+    <li><strong>P2</strong> — 한글 번역 누락 선수 배치 보강.</li>
+  </ol>
+</div>
+
+<h2>역질문 (의문점)</h2>
+<ul class="questions">
+  <li><strong>1. balldontlie /fights 유료 결제 여부</strong> — 파이트 단위 결과/메서드/라운드는 유료 티어. 결제 예정인지, 아니면 ufcstats 추가 크롤링으로 대체할지 의사 결정 필요. 선수 프로필 0/0/0 문제 직결.</li>
+  <li><strong>2. 게시판 작성자와 회원 연결</strong> — 현재 <code>posts.author_nickname</code>은 자유 입력. 1:1 쪽지를 게시글 작성자에게 보내려면 <code>users.id</code> FK 필요. 계약 ①-10 "회원 간 쪽지" 범위가 회원-회원만으로 한정되는지 확인.</li>
+  <li><strong>3. NextAuth vs 자체 JWT</strong> — 계약서 표현은 "NextAuth"인데 실 구현은 bcrypt + jose 기반 자체 JWT. 스키마(accounts/sessions 테이블) 흔적은 남아있음. 계약 표현 수정 vs NextAuth 마이그레이션 중 어느 쪽?</li>
+  <li><strong>4. 관리자 권한 부여 절차</strong> — <code>users.role = 'admin'</code> 수동 SQL 외에 부여 흐름이 있는지. 클라이언트 데모/검수용 관리자 계정 발급 가능?</li>
+  <li><strong>5. 시드 데이터 정책</strong> — 게시판 30개 글의 추천/조회/댓글 [N] 숫자가 의도된 시드인지, 댓글 본문은 의도적으로 비워둔 건지. 운영 전 정리 필요?</li>
+  <li><strong>6. 한글 번역 스코프</strong> — 모든 8089명 + 모든 이벤트를 DeepL 배치 돌리면 비용/시간 어느 정도 예산? 부분 번역 유지 vs 전수 번역 어느 쪽 선호?</li>
+  <li><strong>7. 라이트/다크 모드 정책</strong> — 시스템 prefers-color-scheme 자동 감지 + 토글 두 가지 다 지원하는데, 회원가입/로그인 페이지만 라이트 고정인 건 의도? 다크가 default라면 수정 권장.</li>
+  <li><strong>8. 상용 트래픽 기준 레이트 리밋</strong> — 익명 업로드 10/10분, 로그인 30/10분이 in-memory Map. 다중 인스턴스 환경(Vercel)에서 세션 간 일관성 깨짐. KV/Redis 도입 시점?</li>
+</ul>
+
+</main>
+</body>
+</html>

@@ -126,7 +126,7 @@ export default function VotePage() {
   }, []);
 
   // 카테고리 목록
-  const { data: categoriesRes } = useSWR<{ data: CategorySummary[] }>(
+  const { data: categoriesRes, mutate: mutateCategories } = useSWR<{ data: CategorySummary[] }>(
     "/api/mma-vote",
     fetcher,
     { revalidateOnFocus: false }
@@ -198,16 +198,18 @@ export default function VotePage() {
           }),
         });
 
-        // 서버 데이터로 동기화
+        // 서버 데이터로 동기화 (카테고리 목록의 totalVotes도 갱신)
         mutateVotes();
+        mutateCategories();
       } catch {
         // 실패 시 서버 데이터 재요청
         mutateVotes();
+        mutateCategories();
       } finally {
         setTimeout(() => setVotingId(null), 300);
       }
     },
-    [fingerprint, votingId, voteData, activeCategory, mutateVotes]
+    [fingerprint, votingId, voteData, activeCategory, mutateVotes, mutateCategories]
   );
 
   // ── 전체 투표수 합산 ──

@@ -35,7 +35,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased pb-20 md:pb-0 md:pt-16`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased pb-[calc(4rem+env(safe-area-inset-bottom)+1rem)] md:pb-0 md:pt-16`}
       >
         <NavBar />
         <ThemeToggle />

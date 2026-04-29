@@ -37,25 +37,25 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900 mb-1">회원가입</h1>
-        <p className="text-xs text-gray-500 mb-6">가입 후 바로 로그인됩니다.</p>
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm bg-surface border border-border rounded-xl p-6 shadow-sm">
+        <h1 className="text-xl font-bold text-foreground mb-1">회원가입</h1>
+        <p className="text-xs text-muted mb-6">가입 후 바로 로그인됩니다.</p>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">이메일</label>
+            <label className="block text-xs font-semibold text-foreground mb-1">이메일</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary"
               placeholder="you@example.com"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">닉네임</label>
+            <label className="block text-xs font-semibold text-foreground mb-1">닉네임</label>
             <input
               type="text"
               value={nickname}
@@ -63,25 +63,25 @@ export default function RegisterPage() {
               required
               minLength={2}
               maxLength={20}
-              className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary"
               placeholder="2~20자"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">비밀번호</label>
+            <label className="block text-xs font-semibold text-foreground mb-1">비밀번호</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary"
               placeholder="8자 이상"
             />
           </div>
 
           {error && (
-            <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+            <div className="text-xs text-danger bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
               {error}
             </div>
           )}
@@ -89,15 +89,15 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded disabled:opacity-50"
+            className="w-full py-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
           >
             {loading ? "가입 중..." : "가입하기"}
           </button>
         </form>
 
-        <div className="mt-4 text-center text-xs text-gray-500">
+        <div className="mt-4 text-center text-xs text-muted">
           이미 계정이 있으신가요?{" "}
-          <Link href="/login" className="text-blue-600 hover:underline">
+          <Link href="/login" className="text-primary hover:underline">
             로그인
           </Link>
         </div>
