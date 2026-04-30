@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getFingerprint } from "@/lib/fingerprint";
 import CommentSection from "@/components/comment-section";
+import { ResultChip, MethodChip, type FightResultTag } from "@/components/fight-chips";
 import type { DbFighter, DbOrgRecord, DbRecentFight } from "@/lib/mma-types";
 
 // ── SWR fetcher ──
@@ -146,19 +147,40 @@ interface FighterDetailResponse {
 
 function OrgRecordRow({ r }: { r: DbOrgRecord }) {
   return (
-    <div className="flex items-center justify-between border-b border-border/60 py-2 text-xs">
-      <span className="font-semibold text-foreground">
+    <div className="flex items-center justify-between border-b border-border/60 py-2 text-xs gap-2">
+      <span className="font-semibold text-foreground truncate">
         {r.orgNameKo || r.orgName || "기타"}
       </span>
-      <span className="text-muted">
-        <span className="text-success font-bold">{r.wins}</span>-
-        <span className="text-danger font-bold">{r.losses}</span>-
-        <span className="text-muted">{r.draws}</span>
-        {r.noContests > 0 && <span className="ml-1">(NC {r.noContests})</span>}
-        <span className="ml-2 text-[10px] text-muted">
-          KO {r.winsByKo} · SUB {r.winsBySub} · DEC {r.winsByDec}
+      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+        <span className="font-mono tabular-nums text-muted">
+          <span className="text-success font-bold">{r.wins}</span>
+          <span className="mx-0.5">-</span>
+          <span className="text-danger font-bold">{r.losses}</span>
+          <span className="mx-0.5">-</span>
+          <span>{r.draws}</span>
+          {r.noContests > 0 && <span className="ml-1 text-yellow-500">(NC {r.noContests})</span>}
         </span>
-      </span>
+        <span className="flex items-center gap-1">
+          {r.winsByKo > 0 && (
+            <span className="inline-flex items-center gap-0.5">
+              <MethodChip method="KO" />
+              <span className="text-[10px] text-muted tabular-nums">{r.winsByKo}</span>
+            </span>
+          )}
+          {r.winsBySub > 0 && (
+            <span className="inline-flex items-center gap-0.5">
+              <MethodChip method="SUB" />
+              <span className="text-[10px] text-muted tabular-nums">{r.winsBySub}</span>
+            </span>
+          )}
+          {r.winsByDec > 0 && (
+            <span className="inline-flex items-center gap-0.5">
+              <MethodChip method="DEC" />
+              <span className="text-[10px] text-muted tabular-nums">{r.winsByDec}</span>
+            </span>
+          )}
+        </span>
+      </div>
     </div>
   );
 }
@@ -166,26 +188,32 @@ function OrgRecordRow({ r }: { r: DbOrgRecord }) {
 // ── 최근 경기 카드 ──
 
 function RecentFightRow({ f, fighterId }: { f: DbRecentFight; fighterId: number }) {
-  const isA = f.fighterAId === fighterId;
   const isWin = f.winnerId != null && f.winnerId === fighterId;
   const isLoss = f.winnerId != null && f.winnerId !== fighterId && f.result !== "DRAW";
-  const tag = isWin ? "W" : isLoss ? "L" : f.result === "DRAW" ? "D" : "-";
-  const tagColor = isWin ? "text-success" : isLoss ? "text-danger" : "text-muted";
-  void isA;
+  const isNC = f.result === "NO_CONTEST";
+  const tag: FightResultTag = isWin ? "W" : isLoss ? "L" : f.result === "DRAW" ? "D" : isNC ? "NC" : "-";
   return (
-    <div className="flex items-center justify-between border-b border-border/60 py-2 text-xs">
-      <div className="min-w-0">
-        <p className="text-foreground truncate">
-          {f.eventNameKo || f.eventName || "-"}
-        </p>
-        <p className="text-[10px] text-muted truncate">
-          {f.eventDate ? new Date(f.eventDate).toLocaleDateString("ko-KR") : "-"}
-          {f.method && <> · {f.method}</>}
-          {f.round && <> · R{f.round}</>}
-          {f.time && <> {f.time}</>}
-        </p>
+    <div className="flex items-center justify-between border-b border-border/60 py-2 text-xs gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <ResultChip tag={tag} />
+        <div className="min-w-0">
+          <p className="text-foreground truncate">
+            {f.eventNameKo || f.eventName || "-"}
+          </p>
+          <p className="text-[10px] text-muted truncate flex items-center gap-1">
+            <span className="tabular-nums">
+              {f.eventDate ? new Date(f.eventDate).toLocaleDateString("ko-KR") : "-"}
+            </span>
+            {f.round && <span className="tabular-nums">· R{f.round}</span>}
+            {f.time && <span className="tabular-nums">· {f.time}</span>}
+          </p>
+        </div>
       </div>
-      <span className={cn("ml-3 font-bold", tagColor)}>{tag}</span>
+      {f.method && (
+        <div className="shrink-0">
+          <MethodChip method={f.method} />
+        </div>
+      )}
     </div>
   );
 }

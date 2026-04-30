@@ -10,9 +10,11 @@ export default function ThemeToggle() {
 
   // 초기 테마 로드
   useEffect(() => {
+    // layout.tsx 인라인 스크립트와 동일 로직: 명시적 "light" 아니면 다크
     const stored = localStorage.getItem("theme");
-    const isDark = stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const isDark = stored !== "light";
     if (isDark) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDark(isDark);
     setMounted(true);
