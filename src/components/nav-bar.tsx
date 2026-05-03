@@ -6,6 +6,7 @@ import { Swords, Search, Calendar, Trophy, MessageSquare, User, LogIn } from "lu
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/theme-toggle";
+import GlobalSearchPalette from "@/components/global-search-palette";
 
 interface NavItem {
   label: string;
@@ -133,6 +134,7 @@ export default function NavBar() {
 
           {/* 로그인 / 유저 메뉴 */}
           <div className="flex items-center gap-2 text-sm">
+            <GlobalSearchPalette variant="desktop" />
             {!loaded ? (
               <span className="text-xs text-muted">···</span>
             ) : user ? (
@@ -223,6 +225,7 @@ export default function NavBar() {
             MMA 분석 커뮤니티
           </Link>
           <div className="flex min-w-0 items-center gap-2 text-xs">
+            <GlobalSearchPalette variant="mobile" />
             {!loaded ? (
               <span className="text-muted">···</span>
             ) : user ? (
