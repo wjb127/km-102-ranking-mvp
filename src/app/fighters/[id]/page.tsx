@@ -86,11 +86,12 @@ function DetailSkeleton() {
 interface StatCardProps {
   label: string;
   value: number;
+  tag: FightResultTag;
   color: string;
   bgColor: string;
 }
 
-function StatCard({ label, value, color, bgColor }: StatCardProps) {
+function StatCard({ label, value, tag, color, bgColor }: StatCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -101,7 +102,10 @@ function StatCard({ label, value, color, bgColor }: StatCardProps) {
         bgColor
       )}
     >
-      <span className={cn("text-3xl md:text-4xl font-extrabold", color)}>{value}</span>
+      <span className="flex items-center gap-2">
+        <ResultChip tag={tag} size="md" />
+        <span className={cn("text-3xl md:text-4xl font-extrabold", color)}>{value}</span>
+      </span>
       <span className="text-xs text-muted mt-1 font-medium">{label}</span>
     </motion.div>
   );
@@ -319,9 +323,9 @@ function FighterDetailClient({ id }: { id: string }) {
                   전적 (전체 합산)
                 </h2>
                 <div className="grid grid-cols-3 gap-3">
-                  <StatCard label="승리" value={totalWins} color="text-success" bgColor="bg-success/5" />
-                  <StatCard label="패배" value={totalLosses} color="text-danger" bgColor="bg-danger/5" />
-                  <StatCard label="무승부" value={totalDraws} color="text-muted" bgColor="bg-surface" />
+                  <StatCard label="승리" value={totalWins} tag="W" color="text-success" bgColor="bg-success/5" />
+                  <StatCard label="패배" value={totalLosses} tag="L" color="text-danger" bgColor="bg-danger/5" />
+                  <StatCard label="무승부" value={totalDraws} tag="D" color="text-muted" bgColor="bg-surface" />
                 </div>
                 {totalNC > 0 && (
                   <p className="text-xs text-muted mt-2 text-center">무효 경기: {totalNC}</p>
