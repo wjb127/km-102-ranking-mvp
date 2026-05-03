@@ -147,6 +147,69 @@ interface FighterDetailResponse {
   recentFights: DbRecentFight[];
 }
 
+function getRecentFightTag(f: DbRecentFight, fighterId: number): FightResultTag {
+  const isWin = f.winnerId != null && f.winnerId === fighterId;
+  const isLoss = f.winnerId != null && f.winnerId !== fighterId && f.result !== "DRAW";
+  if (isWin) return "W";
+  if (isLoss) return "L";
+  if (f.result === "DRAW") return "D";
+  if (f.result === "NO_CONTEST") return "NC";
+  return "-";
+}
+
+const FORM_BAR_STYLE: Record<FightResultTag, string> = {
+  W: "h-10 bg-success",
+  L: "h-6 bg-danger",
+  D: "h-4 bg-muted",
+  NC: "h-5 bg-yellow-500",
+  "-": "h-3 bg-border",
+};
+
+function FormSparkline({
+  recentFights,
+  fighterId,
+}: {
+  recentFights: DbRecentFight[];
+  fighterId: number;
+}) {
+  const form = recentFights.slice(0, 5).reverse();
+  const wins = form.filter((f) => getRecentFightTag(f, fighterId) === "W").length;
+
+  return (
+    <div className="mt-3 rounded-xl border border-border bg-surface p-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold text-foreground">최근 5경기 폼</p>
+        <p className="text-[10px] text-muted">
+          {form.length > 0 ? `${wins}승 / ${form.length}경기` : "데이터 없음"}
+        </p>
+      </div>
+      {form.length > 0 ? (
+        <div className="flex items-end gap-2">
+          {form.map((fight) => {
+            const tag = getRecentFightTag(fight, fighterId);
+            return (
+              <div key={fight.id} className="flex flex-1 flex-col items-center gap-1">
+                <div
+                  title={`${fight.eventNameKo || fight.eventName || "이벤트"}: ${tag}`}
+                  className={cn(
+                    "w-full min-w-7 rounded-t-md border border-white/10",
+                    FORM_BAR_STYLE[tag]
+                  )}
+                />
+                <ResultChip tag={tag} />
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex h-12 items-center justify-center text-xs text-muted">
+          최근 경기 데이터가 쌓이면 폼 그래프가 표시됩니다.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── 단체별 전적 카드 ──
 
 function OrgRecordRow({ r }: { r: DbOrgRecord }) {
@@ -192,10 +255,7 @@ function OrgRecordRow({ r }: { r: DbOrgRecord }) {
 // ── 최근 경기 카드 ──
 
 function RecentFightRow({ f, fighterId }: { f: DbRecentFight; fighterId: number }) {
-  const isWin = f.winnerId != null && f.winnerId === fighterId;
-  const isLoss = f.winnerId != null && f.winnerId !== fighterId && f.result !== "DRAW";
-  const isNC = f.result === "NO_CONTEST";
-  const tag: FightResultTag = isWin ? "W" : isLoss ? "L" : f.result === "DRAW" ? "D" : isNC ? "NC" : "-";
+  const tag = getRecentFightTag(f, fighterId);
   return (
     <div className="flex items-center justify-between border-b border-border/60 py-2 text-xs gap-2">
       <div className="flex items-center gap-2 min-w-0">
@@ -327,6 +387,7 @@ function FighterDetailClient({ id }: { id: string }) {
                   <StatCard label="패배" value={totalLosses} tag="L" color="text-danger" bgColor="bg-danger/5" />
                   <StatCard label="무승부" value={totalDraws} tag="D" color="text-muted" bgColor="bg-surface" />
                 </div>
+                <FormSparkline recentFights={recentFights} fighterId={fighter.id} />
                 {totalNC > 0 && (
                   <p className="text-xs text-muted mt-2 text-center">무효 경기: {totalNC}</p>
                 )}
