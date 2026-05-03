@@ -110,6 +110,82 @@ function getRankStyle(rank: number) {
   }
 }
 
+function VoteDistribution({ voteData }: { voteData: CategoryVoteData }) {
+  const topFighters = voteData.fighters.slice(0, 6);
+
+  return (
+    <motion.div
+      key={`distribution-${voteData.category}`}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" as const }}
+      className="mb-6 rounded-xl border border-border bg-surface p-4"
+    >
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-bold text-foreground">득표 분포</h4>
+          <p className="text-[11px] text-muted">상위 후보별 투표 비중</p>
+        </div>
+        <span className="text-xs font-semibold text-muted">
+          {voteData.totalVotes.toLocaleString()}표
+        </span>
+      </div>
+      <div className="space-y-2.5">
+        {topFighters.map((fighter, index) => {
+          const percentage =
+            voteData.totalVotes > 0
+              ? (fighter.voteCount / voteData.totalVotes) * 100
+              : 0;
+          const rank = index + 1;
+          const style = getRankStyle(rank);
+
+          return (
+            <div key={fighter.id} className="grid grid-cols-[minmax(0,7rem)_1fr_auto] items-center gap-2">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span
+                  className={cn(
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-black",
+                    style.badge
+                  )}
+                >
+                  {rank}
+                </span>
+                <span className="truncate text-xs font-semibold text-foreground">
+                  {fighter.name}
+                </span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-border/60">
+                <motion.div
+                  className={cn(
+                    "h-full rounded-full",
+                    rank === 1
+                      ? "bg-yellow-400"
+                      : rank === 2
+                        ? "bg-gray-400"
+                        : rank === 3
+                          ? "bg-amber-600"
+                          : "bg-primary"
+                  )}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${percentage}%` }}
+                  transition={{
+                    duration: 0.55,
+                    delay: index * 0.04,
+                    ease: "easeOut" as const,
+                  }}
+                />
+              </div>
+              <span className="w-12 text-right text-xs font-bold tabular-nums text-foreground">
+                {percentage.toFixed(1)}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
 // ── fetcher ──
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -316,6 +392,8 @@ export default function VotePage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {voteData && <VoteDistribution voteData={voteData} />}
 
         {/* ── 선수 리스트 ── */}
         <AnimatePresence mode="wait">

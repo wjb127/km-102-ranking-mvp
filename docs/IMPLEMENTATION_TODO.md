@@ -27,6 +27,7 @@
 - 선수 상세 헤더 메인 전적 `ResultChip size="md"` 적용 (ref: Sherdog Fight Finder)
 - 선수 상세 최근 5경기 W/L 폼 스파크라인 적용 (ref: Letterboxd)
 - `/fighters` 2명 선택 사이드바이사이드 비교 모드 적용 (ref: Transfermarkt)
+- GOAT 투표 결과 득표 분포 막대그래프 % 적용 (ref: RYM)
 
 ### 🔧 1차 보강 필요 (현 MVP의 와우 결손)
 1. `@선수` 자동 태그 + 호버 미니카드
