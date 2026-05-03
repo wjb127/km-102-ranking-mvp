@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Search, Users, X, Loader2, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MethodChip, ResultChip } from "@/components/fight-chips";
 import type { DbFighter } from "@/lib/mma-types";
 
 const PAGE_SIZE = 60;
@@ -150,20 +151,42 @@ function FighterCard({ fighter, index }: FighterCardProps) {
           </div>
 
           {/* 전적 */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-sm font-bold text-success">{fighter.wins}W</span>
-            <span className="text-muted/40">-</span>
-            <span className="text-sm font-bold text-danger">{fighter.losses}L</span>
-            <span className="text-muted/40">-</span>
-            <span className="text-sm font-bold text-muted">{fighter.draws}D</span>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1">
+              <ResultChip tag="W" />
+              <span className="text-sm font-bold tabular-nums text-success">{fighter.wins}</span>
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <ResultChip tag="L" />
+              <span className="text-sm font-bold tabular-nums text-danger">{fighter.losses}</span>
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <ResultChip tag="D" />
+              <span className="text-sm font-bold tabular-nums text-muted">{fighter.draws}</span>
+            </span>
             {totalFights > 0 && (
               <span className="ml-auto text-xs text-muted">승률 {winRate}%</span>
             )}
           </div>
 
+          <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3">
+            <span className="inline-flex items-center gap-1">
+              <MethodChip method="KO" />
+              <span className="text-[10px] tabular-nums text-muted">{fighter.winsByKo}</span>
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <MethodChip method="SUB" />
+              <span className="text-[10px] tabular-nums text-muted">{fighter.winsBySub}</span>
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <MethodChip method="DEC" />
+              <span className="text-[10px] tabular-nums text-muted">{fighter.winsByDec}</span>
+            </span>
+          </div>
+
           {/* 체급 */}
           {fighter.weightClass && (
-            <div className="flex items-center gap-1.5 pt-3 border-t border-border">
+            <div className="flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-muted" />
               <span className="text-xs text-muted">{fighter.weightClass}</span>
             </div>

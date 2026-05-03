@@ -21,6 +21,7 @@
 - 모바일 safe-area 패딩 + GOAT 푸터 합계 동기화
 - ufcstats 동기화 스크립트
 - QA 리포트 (35 스크린샷, P1·P2 4건 해결)
+- `/fighters` 리스트 전적 칩 적용 — ResultChip(W/L/D), MethodChip(KO/SUB/DEC) (ref: Sherdog Fight Finder)
 
 ### 🔧 1차 보강 필요 (현 MVP의 와우 결손)
 1. `@선수` 자동 태그 + 호버 미니카드
