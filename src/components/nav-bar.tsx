@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Swords, Search, Calendar, Trophy, MessageSquare, User, LogIn } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import ThemeToggle from "@/components/theme-toggle";
 
 interface NavItem {
   label: string;
@@ -186,6 +187,7 @@ export default function NavBar() {
                 </Link>
               </>
             )}
+            <ThemeToggle />
           </div>
         </nav>
       </header>
@@ -220,7 +222,7 @@ export default function NavBar() {
           <Link href="/" className="text-sm font-bold text-foreground">
             MMA 분석 커뮤니티
           </Link>
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex min-w-0 items-center gap-2 text-xs">
             {!loaded ? (
               <span className="text-muted">···</span>
             ) : user ? (
@@ -267,6 +269,7 @@ export default function NavBar() {
                 </Link>
               </>
             )}
+            <ThemeToggle className="h-8 w-8" />
           </div>
         </div>
       </div>

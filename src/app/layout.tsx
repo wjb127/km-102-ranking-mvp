@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ThemeToggle from "@/components/theme-toggle";
 import NavBar from "@/components/nav-bar";
 
 const geistSans = Geist({
@@ -38,7 +37,6 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased pb-[calc(4rem+env(safe-area-inset-bottom)+1rem)] md:pb-0 md:pt-16`}
       >
         <NavBar />
-        <ThemeToggle />
         {children}
       </body>
     </html>

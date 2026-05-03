@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function ThemeToggle() {
+interface ThemeToggleProps {
+  className?: string;
+}
+
+export default function ThemeToggle({ className }: ThemeToggleProps) {
   const [dark, setDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -42,7 +46,8 @@ export default function ThemeToggle() {
       onClick={toggle}
       aria-label={dark ? "라이트 모드로 전환" : "다크 모드로 전환"}
       className={cn(
-        "fixed right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-surface/80 shadow-lg backdrop-blur-sm transition-all hover:scale-110 hover:border-primary/40",
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-surface/80 shadow-sm backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40",
+        className
       )}
     >
       {dark ? (
