@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import useSWRInfinite from "swr/infinite";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Search, Users, X, Loader2, SlidersHorizontal } from "lucide-react";
+import { Search, Users, X, Loader2, SlidersHorizontal, GitCompareArrows } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MethodChip, ResultChip } from "@/components/fight-chips";
 import type { DbFighter } from "@/lib/mma-types";
@@ -99,16 +99,34 @@ function FighterCardSkeleton() {
 interface FighterCardProps {
   fighter: DbFighter;
   index: number;
+  selected: boolean;
+  compareFull: boolean;
+  onToggleCompare: (fighter: DbFighter) => void;
 }
 
-function FighterCard({ fighter, index }: FighterCardProps) {
+function getFighterStats(fighter: DbFighter) {
   const totalFights = fighter.wins + fighter.losses + fighter.draws;
   const winRate =
     totalFights > 0 ? Math.round((fighter.wins / totalFights) * 100) : 0;
+  const finishWins = fighter.winsByKo + fighter.winsBySub;
+  const finishRate = fighter.wins > 0 ? Math.round((finishWins / fighter.wins) * 100) : 0;
+
+  return { totalFights, winRate, finishWins, finishRate };
+}
+
+function FighterCard({
+  fighter,
+  index,
+  selected,
+  compareFull,
+  onToggleCompare,
+}: FighterCardProps) {
+  const { totalFights, winRate } = getFighterStats(fighter);
 
   const displayName = fighter.fullNameKo || fighter.fullName;
   const subName = fighter.fullNameKo ? fighter.fullName : null;
   const nick = fighter.nicknameKo || fighter.nickname;
+  const compareDisabled = compareFull && !selected;
 
   return (
     <motion.div
@@ -120,15 +138,33 @@ function FighterCard({ fighter, index }: FighterCardProps) {
         ease: "easeOut" as const,
       }}
     >
-      <Link href={`/fighters/${fighter.id}`} className="block group">
-        <div
+      <div
+        className={cn(
+          "group relative rounded-xl border bg-surface p-5",
+          "transition-all duration-200",
+          selected
+            ? "border-primary/50 shadow-lg shadow-primary/10"
+            : "border-border hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1"
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => onToggleCompare(fighter)}
+          disabled={compareDisabled}
+          aria-pressed={selected}
+          aria-label={`${displayName} 비교 ${selected ? "해제" : "선택"}`}
           className={cn(
-            "rounded-xl border border-border bg-surface p-5",
-            "transition-all duration-200",
-            "hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5",
-            "group-hover:-translate-y-1"
+            "absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors",
+            selected
+              ? "border-primary/50 bg-primary/15 text-primary"
+              : "border-border bg-background/60 text-muted hover:border-primary/40 hover:text-primary",
+            compareDisabled && "cursor-not-allowed opacity-40 hover:border-border hover:text-muted"
           )}
         >
+          <GitCompareArrows className="h-4 w-4" />
+        </button>
+
+        <Link href={`/fighters/${fighter.id}`} className="block pr-9">
           {/* 상단: 국기 + 이름 + 닉네임 */}
           <div className="flex items-start gap-3 mb-3">
             <span
@@ -191,8 +227,109 @@ function FighterCard({ fighter, index }: FighterCardProps) {
               <span className="text-xs text-muted">{fighter.weightClass}</span>
             </div>
           )}
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
+function CompareValue({
+  label,
+  left,
+  right,
+}: {
+  label: string;
+  left: string | number;
+  right: string | number;
+}) {
+  return (
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-border/60 py-2 text-sm">
+      <span className="text-right font-semibold text-foreground tabular-nums">{left}</span>
+      <span className="min-w-20 text-center text-[11px] font-medium text-muted">{label}</span>
+      <span className="font-semibold text-foreground tabular-nums">{right}</span>
+    </div>
+  );
+}
+
+function ComparePanel({
+  fighters,
+  onClear,
+}: {
+  fighters: DbFighter[];
+  onClear: () => void;
+}) {
+  const [left, right] = fighters;
+  const leftStats = left ? getFighterStats(left) : null;
+  const rightStats = right ? getFighterStats(right) : null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" as const }}
+      className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4"
+    >
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <GitCompareArrows className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-bold text-foreground">선수 비교</h2>
+          <span className="text-xs text-muted">{fighters.length}/2명 선택</span>
         </div>
-      </Link>
+        <button
+          type="button"
+          onClick={onClear}
+          className="text-xs text-muted hover:text-foreground"
+        >
+          초기화
+        </button>
+      </div>
+
+      {fighters.length < 2 || !left || !right || !leftStats || !rightStats ? (
+        <div className="rounded-lg border border-border bg-surface px-4 py-5 text-center text-sm text-muted">
+          비교할 선수 2명을 선택하세요.
+        </div>
+      ) : (
+        <div className="rounded-lg border border-border bg-surface p-3">
+          <div className="mb-2 grid grid-cols-[1fr_auto_1fr] items-start gap-3">
+            <div className="min-w-0 text-right">
+              <p className="truncate text-sm font-bold text-foreground">
+                {left.fullNameKo || left.fullName}
+              </p>
+              <p className="text-[10px] text-muted">{left.weightClass ?? "-"}</p>
+            </div>
+            <span className="rounded-md bg-border/50 px-2 py-1 text-[10px] font-bold text-muted">
+              VS
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-foreground">
+                {right.fullNameKo || right.fullName}
+              </p>
+              <p className="text-[10px] text-muted">{right.weightClass ?? "-"}</p>
+            </div>
+          </div>
+          <CompareValue label="전적" left={`${left.wins}-${left.losses}-${left.draws}`} right={`${right.wins}-${right.losses}-${right.draws}`} />
+          <CompareValue label="승률" left={`${leftStats.winRate}%`} right={`${rightStats.winRate}%`} />
+          <CompareValue label="총 경기" left={leftStats.totalFights} right={rightStats.totalFights} />
+          <CompareValue label="KO승" left={left.winsByKo} right={right.winsByKo} />
+          <CompareValue label="SUB승" left={left.winsBySub} right={right.winsBySub} />
+          <CompareValue label="판정승" left={left.winsByDec} right={right.winsByDec} />
+          <CompareValue label="피니시율" left={`${leftStats.finishRate}%`} right={`${rightStats.finishRate}%`} />
+          <div className="grid grid-cols-2 gap-2 pt-3">
+            <Link
+              href={`/fighters/${left.id}`}
+              className="rounded-lg border border-border px-3 py-2 text-center text-xs font-semibold text-muted hover:border-primary/40 hover:text-primary"
+            >
+              왼쪽 상세
+            </Link>
+            <Link
+              href={`/fighters/${right.id}`}
+              className="rounded-lg border border-border px-3 py-2 text-center text-xs font-semibold text-muted hover:border-primary/40 hover:text-primary"
+            >
+              오른쪽 상세
+            </Link>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -205,6 +342,7 @@ export default function FightersPage() {
   const [sort, setSort] = useState<SortValue>("wins");
   const [weight, setWeight] = useState<string>("");
   const [activeOnly, setActiveOnly] = useState(true);
+  const [compareFighters, setCompareFighters] = useState<DbFighter[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 디바운스 (500ms)
@@ -240,6 +378,16 @@ export default function FightersPage() {
   const total = data?.[0]?.total ?? 0;
   const hasMore = fighters.length < total;
   const isLoadingMore = isLoading || (size > 0 && data && typeof data[size - 1] === "undefined");
+
+  function toggleCompare(fighter: DbFighter) {
+    setCompareFighters((current) => {
+      if (current.some((f) => f.id === fighter.id)) {
+        return current.filter((f) => f.id !== fighter.id);
+      }
+      if (current.length >= 2) return current;
+      return [...current, fighter];
+    });
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -397,6 +545,13 @@ export default function FightersPage() {
           </p>
         )}
 
+        {compareFighters.length > 0 && (
+          <ComparePanel
+            fighters={compareFighters}
+            onClear={() => setCompareFighters([])}
+          />
+        )}
+
         {/* 선수 그리드 */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -417,7 +572,14 @@ export default function FightersPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {fighters.map((fighter, i) => (
-                <FighterCard key={fighter.id} fighter={fighter} index={i} />
+                <FighterCard
+                  key={fighter.id}
+                  fighter={fighter}
+                  index={i}
+                  selected={compareFighters.some((f) => f.id === fighter.id)}
+                  compareFull={compareFighters.length >= 2}
+                  onToggleCompare={toggleCompare}
+                />
               ))}
             </div>
             {hasMore && (
