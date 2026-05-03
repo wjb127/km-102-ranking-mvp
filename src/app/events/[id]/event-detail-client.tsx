@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getFingerprint } from "@/lib/fingerprint";
 import CommentSection from "@/components/comment-section";
+import { MethodChip, ResultChip, type FightResultTag } from "@/components/fight-chips";
 import type { DbEventSummary, DbFightCard } from "@/lib/mma-types";
 
 // ── 유틸 ──
@@ -43,6 +44,13 @@ function isUpcoming(dateStr: string | null): boolean {
   return new Date(dateStr).getTime() >= Date.now();
 }
 
+function getResultTag(f: DbFightCard, fighterId: number): FightResultTag {
+  if (f.result === "DRAW") return "D";
+  if (f.result === "NO_CONTEST") return "NC";
+  if (f.winnerId == null) return "-";
+  return f.winnerId === fighterId ? "W" : "L";
+}
+
 // ── 스켈레톤 ──
 
 function DetailSkeleton() {
@@ -64,8 +72,9 @@ function DetailSkeleton() {
 function FightRow({ f }: { f: DbFightCard }) {
   const aName = f.fighterANameKo || f.fighterAName || "-";
   const bName = f.fighterBNameKo || f.fighterBName || "-";
-  const winnerA = f.winnerId != null && f.winnerId === f.fighterAId;
-  const winnerB = f.winnerId != null && f.winnerId === f.fighterBId;
+  const tagA = getResultTag(f, f.fighterAId);
+  const tagB = getResultTag(f, f.fighterBId);
+  const finished = tagA !== "-" || tagB !== "-";
 
   return (
     <div
@@ -95,35 +104,35 @@ function FightRow({ f }: { f: DbFightCard }) {
             <span className="text-[10px] text-muted">{f.weightClass}</span>
           )}
         </div>
-        {f.result && f.method && (
-          <span className="text-[10px] text-muted">
-            {f.method}
-            {f.round && ` · R${f.round}`}
-            {f.time && ` ${f.time}`}
-          </span>
+        {(f.method || f.round || f.time) && (
+          <div className="flex shrink-0 items-center gap-1.5 text-[10px] text-muted">
+            {f.method && <MethodChip method={f.method} />}
+            {f.round && <span className="tabular-nums">R{f.round}</span>}
+            {f.time && <span className="tabular-nums">{f.time}</span>}
+          </div>
         )}
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
         <Link
           href={`/fighters/${f.fighterAId}`}
           className={cn(
-            "text-sm font-semibold truncate text-right hover:text-primary transition-colors",
-            winnerA ? "text-foreground" : "text-muted"
+            "flex min-w-0 items-center justify-end gap-1.5 text-sm font-semibold hover:text-primary transition-colors",
+            tagA === "W" ? "text-foreground" : finished ? "text-muted" : "text-foreground"
           )}
         >
-          {aName}
-          {winnerA && <span className="ml-1 text-success text-xs">W</span>}
+          <span className="truncate">{aName}</span>
+          {finished && <ResultChip tag={tagA} />}
         </Link>
         <Swords className="w-3.5 h-3.5 text-muted/40" />
         <Link
           href={`/fighters/${f.fighterBId}`}
           className={cn(
-            "text-sm font-semibold truncate hover:text-primary transition-colors",
-            winnerB ? "text-foreground" : "text-muted"
+            "flex min-w-0 items-center gap-1.5 text-sm font-semibold hover:text-primary transition-colors",
+            tagB === "W" ? "text-foreground" : finished ? "text-muted" : "text-foreground"
           )}
         >
-          {bName}
-          {winnerB && <span className="ml-1 text-success text-xs">W</span>}
+          {finished && <ResultChip tag={tagB} />}
+          <span className="truncate">{bName}</span>
         </Link>
       </div>
     </div>
