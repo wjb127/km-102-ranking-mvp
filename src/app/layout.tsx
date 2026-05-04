@@ -26,10 +26,10 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
-        {/* 다크모드 FOUC 방지 — 페이지 로드 전 테마 적용 */}
+        {/* 라이트 기본 + 다크모드 FOUC 방지 — 명시적 "dark"일 때만 다크 적용 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("theme");if(t!=="light")document.documentElement.classList.add("dark")}catch(e){document.documentElement.classList.add("dark")}})()`,
+            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark")document.documentElement.classList.add("dark")}catch(e){}})()`,
           }}
         />
       </head>
