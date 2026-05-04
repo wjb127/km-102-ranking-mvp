@@ -161,6 +161,13 @@ export default function AdminPage() {
             <span className="flex-1 text-left">선수 수정</span>
           </Link>
           <Link
+            href="/admin/fights"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--muted)] transition-all hover:bg-[var(--border)]/40 hover:text-[var(--foreground)]"
+          >
+            <Swords className="h-4 w-4" />
+            <span className="flex-1 text-left">경기 보정</span>
+          </Link>
+          <Link
             href="/admin/overrides"
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--muted)] transition-all hover:bg-[var(--border)]/40 hover:text-[var(--foreground)]"
           >
@@ -208,6 +215,13 @@ export default function AdminPage() {
           >
             <Dumbbell className="h-3.5 w-3.5" />
             선수 수정
+          </Link>
+          <Link
+            href="/admin/fights"
+            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-[var(--muted)]"
+          >
+            <Swords className="h-3.5 w-3.5" />
+            경기 보정
           </Link>
         </div>
       </div>

@@ -164,38 +164,12 @@ export default function AdminFighterDetailPage() {
           </p>
         </div>
 
-        {/* 단체별 전적 (읽기 전용) */}
-        <div className="bg-white border border-gray-200 rounded-lg p-5 mb-4">
-          <h2 className="text-sm font-bold text-gray-900 mb-3">단체별 전적 (읽기 전용)</h2>
-          {orgRecords.length === 0 ? (
-            <p className="text-xs text-gray-500">등록된 전적이 없습니다.</p>
-          ) : (
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-left text-gray-500 border-b border-gray-200">
-                  <th className="py-1.5">조직</th>
-                  <th>W-L-D-NC</th>
-                  <th>KO</th>
-                  <th>SUB</th>
-                  <th>DEC</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orgRecords.map((r) => (
-                  <tr key={r.id} className="border-b border-gray-100">
-                    <td className="py-1.5">org#{r.organizationId}</td>
-                    <td>
-                      {r.wins}-{r.losses}-{r.draws}-{r.noContests}
-                    </td>
-                    <td>{r.winsByKo}</td>
-                    <td>{r.winsBySub}</td>
-                    <td>{r.winsByDec}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        {/* 단체별 전적 (수동 보정 가능) */}
+        <RecordsEditor
+          fighterId={Number(fighterId)}
+          initial={orgRecords}
+          onSaved={load}
+        />
 
         {/* 수정 폼 */}
         <form onSubmit={onSave} className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
@@ -266,6 +240,164 @@ export default function AdminFighterDetailPage() {
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+// ── 단체별 전적 수동 보정 컴포넌트 ──
+type RecordKey =
+  | "wins"
+  | "losses"
+  | "draws"
+  | "noContests"
+  | "winsByKo"
+  | "winsBySub"
+  | "winsByDec";
+
+const RECORD_LABELS: Record<RecordKey, string> = {
+  wins: "승",
+  losses: "패",
+  draws: "무",
+  noContests: "NC",
+  winsByKo: "KO승",
+  winsBySub: "SUB승",
+  winsByDec: "판정승",
+};
+
+function RecordsEditor({
+  fighterId,
+  initial,
+  onSaved,
+}: {
+  fighterId: number;
+  initial: OrgRecord[];
+  onSaved: () => void;
+}) {
+  const [rows, setRows] = useState<OrgRecord[]>(initial);
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const dirty = JSON.stringify(rows) !== JSON.stringify(initial);
+
+  useEffect(() => {
+    setRows(initial);
+  }, [initial]);
+
+  async function onSave() {
+    setMsg(null);
+    setError(null);
+    if (!reason.trim()) {
+      setError("보정 사유를 입력해주세요.");
+      return;
+    }
+    if (!dirty) {
+      setError("수정된 전적이 없습니다.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/fighters/${fighterId}/records`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason, records: rows }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setError(json.error ?? "저장 실패");
+        return;
+      }
+      setMsg("전적 저장 완료 (감사 로그 기록).");
+      setReason("");
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function setVal(idx: number, key: RecordKey, value: string) {
+    const num = Math.max(0, Math.floor(Number(value) || 0));
+    setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [key]: num } : r)));
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-5 mb-4">
+      <h2 className="text-sm font-bold text-gray-900 mb-3">
+        단체별 전적 수동 보정
+      </h2>
+      {rows.length === 0 ? (
+        <p className="text-xs text-gray-500">등록된 전적이 없습니다.</p>
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-gray-500 border-b border-gray-200">
+                  <th className="py-1.5 pr-2">조직</th>
+                  {(Object.keys(RECORD_LABELS) as RecordKey[]).map((k) => (
+                    <th key={k} className="px-1">
+                      {RECORD_LABELS[k]}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, idx) => (
+                  <tr key={r.id} className="border-b border-gray-100">
+                    <td className="py-1.5 pr-2 text-gray-600">org#{r.organizationId}</td>
+                    {(Object.keys(RECORD_LABELS) as RecordKey[]).map((k) => (
+                      <td key={k} className="px-1">
+                        <input
+                          type="number"
+                          min={0}
+                          value={r[k]}
+                          onChange={(e) => setVal(idx, k, e.target.value)}
+                          className="w-14 px-1.5 py-1 border border-gray-300 rounded text-xs text-right focus:outline-none focus:border-red-500"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="border-t border-gray-200 pt-3 mt-3">
+            <label className="block text-xs font-semibold text-red-700 mb-1">
+              보정 사유 (필수, 감사 로그 기록)
+            </label>
+            <textarea
+              rows={2}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="예: 11/10 이벤트 경기 판정 번복 → 승패 정정"
+              className="w-full px-3 py-2 border border-red-200 rounded text-xs focus:outline-none focus:border-red-500 resize-none"
+            />
+          </div>
+
+          {error && (
+            <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 mt-2">
+              {error}
+            </div>
+          )}
+          {msg && (
+            <div className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2 mt-2">
+              {msg}
+            </div>
+          )}
+
+          <div className="flex justify-end mt-3">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving || !dirty}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded disabled:opacity-50 flex items-center gap-1.5"
+            >
+              <Save className="w-3.5 h-3.5" /> {saving ? "저장 중..." : "전적 저장"}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
