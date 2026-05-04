@@ -9,9 +9,11 @@
 
 | 항목 | 주소 |
 | --- | --- |
-| Production | https://<vercel-domain>.vercel.app (인수 시 클라이언트 도메인 연결) |
+| Production | https://km-102-ranking-mvp.vercel.app (Vercel 기본 도메인. 인수 시 클라이언트 커스텀 도메인 연결) |
+| 최신 배포 | https://km-102-ranking-h9sp8pswp-seungbeen-wis-projects.vercel.app |
 | Preview | Vercel PR 자동 빌드 |
 | Git 저장소 | https://github.com/wjb127/km-102-ranking-mvp (master 브랜치) |
+| Vercel 프로젝트 | seungbeen-wis-projects/km-102-ranking-mvp (`prj_eH4ojoyzp2rc7j5VLVgEMBZBrdsV`) |
 | 스테이징 | 별도 환경 미사용 (Preview = 스테이징) |
 
 배포 명령: `git push origin master` → Vercel 자동 배포.
