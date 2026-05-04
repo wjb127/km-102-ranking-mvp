@@ -26,8 +26,9 @@ function normalizeFolderSegment(input: string): string {
   return input.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64);
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_FORMATS = ["jpg", "jpeg", "png", "webp", "gif"] as const;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// iOS HEIC/HEIF 포함. Cloudinary 서버에서 jpg/webp로 자동 변환됨
+const ALLOWED_FORMATS = ["jpg", "jpeg", "png", "webp", "gif", "heic", "heif"] as const;
 const WINDOW_MS = 10 * 60 * 1000;
 const ANON_LIMIT = 10;
 const USER_LIMIT = 30;
@@ -59,6 +60,11 @@ export async function POST(req: NextRequest) {
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
   if (!cloudName || !apiKey || !apiSecret) {
+    console.error("[upload] Cloudinary env missing", {
+      hasCloudName: !!cloudName,
+      hasApiKey: !!apiKey,
+      hasApiSecret: !!apiSecret,
+    });
     return NextResponse.json(
       {
         success: false,
@@ -109,6 +115,13 @@ export async function POST(req: NextRequest) {
   const signature = createHash("sha1")
     .update(paramsToSign + apiSecret)
     .digest("hex");
+
+  console.info("[upload] signature issued", {
+    folder,
+    timestamp,
+    role: session?.role ?? "anon",
+    sub: session?.sub ?? null,
+  });
 
   return NextResponse.json({
     success: true,

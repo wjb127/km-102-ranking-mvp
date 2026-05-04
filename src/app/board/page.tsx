@@ -224,6 +224,11 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
     setUploading(true);
     setError("");
     try {
+      console.info("[upload] start", {
+        count: files.length,
+        files: files.map((f) => ({ name: f.name, type: f.type, size: f.size })),
+      });
+
       const fingerprint = await getFingerprint();
       const sigRes = await fetch("/api/upload", {
         method: "POST",
@@ -232,19 +237,36 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
       });
       if (!sigRes.ok) {
         const j = await sigRes.json().catch(() => ({}));
-        setError(j.error ?? "이미지 업로드에 실패했습니다.");
+        console.error("[upload] /api/upload non-ok", { status: sigRes.status, body: j });
+        setError(j.error ?? `이미지 업로드 시그니처 발급 실패 (HTTP ${sigRes.status})`);
         return;
       }
       const { data: sig } = await sigRes.json();
+      console.info("[upload] signature ok", {
+        folder: sig.folder,
+        allowedFormats: sig.allowedFormats,
+        maxFileSize: sig.maxFileSize,
+      });
+
       const uploaded: string[] = [];
       for (const file of files) {
-        const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+        // 확장자가 없거나 헷갈리면 mimeType 기반 보조 추정
+        const nameExt = file.name.split(".").pop()?.toLowerCase() ?? "";
+        const mimeExt = file.type.split("/")[1]?.toLowerCase() ?? "";
+        const ext = sig.allowedFormats.includes(nameExt) ? nameExt : mimeExt;
+
         if (!sig.allowedFormats.includes(ext)) {
-          throw new Error("허용되지 않는 이미지 형식");
+          console.error("[upload] format rejected", { name: file.name, type: file.type, ext });
+          throw new Error(
+            `허용되지 않는 형식 (${file.type || nameExt || "unknown"}). 지원: ${sig.allowedFormats.join(", ")}`
+          );
         }
         if (file.size > sig.maxFileSize) {
-          throw new Error("파일 용량 초과");
+          const mb = (file.size / 1024 / 1024).toFixed(1);
+          const maxMb = (sig.maxFileSize / 1024 / 1024).toFixed(0);
+          throw new Error(`파일 용량 초과 (${mb}MB > ${maxMb}MB). 사진 압축 후 다시 시도해주세요.`);
         }
+
         const fd = new FormData();
         fd.append("file", file);
         fd.append("api_key", sig.apiKey);
@@ -253,14 +275,27 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
         fd.append("folder", sig.folder);
         fd.append("allowed_formats", sig.allowedFormats.join(","));
         fd.append("max_file_size", String(sig.maxFileSize));
+
         const upRes = await fetch(sig.uploadUrl, { method: "POST", body: fd });
-        if (!upRes.ok) throw new Error("Cloudinary 업로드 실패");
+        if (!upRes.ok) {
+          const errBody = await upRes.json().catch(() => ({}));
+          console.error("[upload] cloudinary failed", {
+            status: upRes.status,
+            body: errBody,
+            file: file.name,
+          });
+          const cloudMsg = errBody?.error?.message || `HTTP ${upRes.status}`;
+          throw new Error(`Cloudinary 업로드 실패: ${cloudMsg}`);
+        }
         const upJson = await upRes.json();
+        console.info("[upload] cloudinary ok", { name: file.name, url: upJson.secure_url });
         uploaded.push(upJson.secure_url as string);
       }
       setImageUrls((prev) => [...prev, ...uploaded]);
-    } catch {
-      setError("이미지 업로드에 실패했습니다. Cloudinary 설정을 확인해주세요.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[upload] caught", err);
+      setError(msg || "이미지 업로드에 실패했습니다.");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
