@@ -43,6 +43,13 @@ export interface DbRecentFight {
   eventDate: string | null;
   fighterAId: number;
   fighterBId: number;
+  fighterAName?: string | null;
+  fighterANameKo?: string | null;
+  fighterBName?: string | null;
+  fighterBNameKo?: string | null;
+  opponentId?: number;
+  opponentName?: string | null;
+  opponentNameKo?: string | null;
   weightClass: string | null;
   isTitleFight: boolean;
   isMainEvent: boolean;

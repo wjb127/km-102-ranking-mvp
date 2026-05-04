@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { alias } from "drizzle-orm/pg-core";
 import { desc, eq, or } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters, fighterOrgRecords, organizations, fights, mmaEvents } from "@/db/schema";
@@ -68,6 +69,9 @@ export async function GET(
     .leftJoin(organizations, eq(fighterOrgRecords.organizationId, organizations.id))
     .where(eq(fighterOrgRecords.fighterId, fighterId));
 
+  const fighterA = alias(fighters, "fighter_a");
+  const fighterB = alias(fighters, "fighter_b");
+
   const recentFights = await db
     .select({
       id: fights.id,
@@ -77,6 +81,10 @@ export async function GET(
       eventDate: mmaEvents.eventDate,
       fighterAId: fights.fighterAId,
       fighterBId: fights.fighterBId,
+      fighterAName: fighterA.fullName,
+      fighterANameKo: fighterA.fullNameKo,
+      fighterBName: fighterB.fullName,
+      fighterBNameKo: fighterB.fullNameKo,
       weightClass: fights.weightClass,
       isTitleFight: fights.isTitleFight,
       isMainEvent: fights.isMainEvent,
@@ -88,6 +96,8 @@ export async function GET(
     })
     .from(fights)
     .leftJoin(mmaEvents, eq(fights.eventId, mmaEvents.id))
+    .leftJoin(fighterA, eq(fights.fighterAId, fighterA.id))
+    .leftJoin(fighterB, eq(fights.fighterBId, fighterB.id))
     .where(or(eq(fights.fighterAId, fighterId), eq(fights.fighterBId, fighterId)))
     .orderBy(desc(mmaEvents.eventDate))
     .limit(20);
@@ -99,6 +109,9 @@ export async function GET(
       orgRecords: orgRows,
       recentFights: recentFights.map((f) => ({
         ...f,
+        opponentId: f.fighterAId === fighterId ? f.fighterBId : f.fighterAId,
+        opponentName: f.fighterAId === fighterId ? f.fighterBName : f.fighterAName,
+        opponentNameKo: f.fighterAId === fighterId ? f.fighterBNameKo : f.fighterANameKo,
         eventDate: f.eventDate ? f.eventDate.toISOString() : null,
       })),
     },

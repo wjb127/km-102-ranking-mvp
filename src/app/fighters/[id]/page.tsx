@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -252,30 +252,138 @@ function OrgRecordRow({ r }: { r: DbOrgRecord }) {
   );
 }
 
-// ── 최근 경기 카드 ──
+type RecordSortKey = "date" | "opponent" | "method";
+type RecordFilter = "ALL" | FightResultTag;
 
-function RecentFightRow({ f, fighterId }: { f: DbRecentFight; fighterId: number }) {
-  const tag = getRecentFightTag(f, fighterId);
+function formatFightDate(dateStr: string | null): string {
+  return dateStr ? new Date(dateStr).toLocaleDateString("ko-KR") : "-";
+}
+
+function getOpponentName(fight: DbRecentFight): string {
+  return fight.opponentNameKo || fight.opponentName || "상대 미정";
+}
+
+function FightRecordTable({
+  fights,
+  fighterId,
+}: {
+  fights: DbRecentFight[];
+  fighterId: number;
+}) {
+  const [sortKey, setSortKey] = useState<RecordSortKey>("date");
+  const [filter, setFilter] = useState<RecordFilter>("ALL");
+
+  const rows = useMemo(() => {
+    return fights
+      .filter((fight) => {
+        if (filter === "ALL") return true;
+        return getRecentFightTag(fight, fighterId) === filter;
+      })
+      .slice()
+      .sort((a, b) => {
+        if (sortKey === "opponent") {
+          return getOpponentName(a).localeCompare(getOpponentName(b), "ko");
+        }
+        if (sortKey === "method") {
+          return (a.method || "").localeCompare(b.method || "", "ko");
+        }
+        return new Date(b.eventDate ?? 0).getTime() - new Date(a.eventDate ?? 0).getTime();
+      });
+  }, [fights, fighterId, filter, sortKey]);
+
   return (
-    <div className="flex items-center justify-between border-b border-border/60 py-2 text-xs gap-2">
-      <div className="flex items-center gap-2 min-w-0">
-        <ResultChip tag={tag} />
-        <div className="min-w-0">
-          <p className="text-foreground truncate">
-            {f.eventNameKo || f.eventName || "-"}
-          </p>
-          <p className="text-[10px] text-muted truncate flex items-center gap-1">
-            <span className="tabular-nums">
-              {f.eventDate ? new Date(f.eventDate).toLocaleDateString("ko-KR") : "-"}
-            </span>
-            {f.round && <span className="tabular-nums">· R{f.round}</span>}
-            {f.time && <span className="tabular-nums">· {f.time}</span>}
-          </p>
-        </div>
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <select
+          value={filter}
+          onChange={(event) => setFilter(event.target.value as RecordFilter)}
+          className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
+          aria-label="전적 결과 필터"
+        >
+          <option value="ALL">전체 결과</option>
+          <option value="W">승</option>
+          <option value="L">패</option>
+          <option value="D">무</option>
+          <option value="NC">무효</option>
+        </select>
+        {[
+          ["date", "날짜순"],
+          ["opponent", "상대순"],
+          ["method", "방식순"],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setSortKey(key as RecordSortKey)}
+            className={cn(
+              "rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors",
+              sortKey === key
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-background text-muted hover:text-foreground"
+            )}
+          >
+            {label}
+          </button>
+        ))}
       </div>
-      {f.method && (
-        <div className="shrink-0">
-          <MethodChip method={f.method} />
+
+      {rows.length > 0 ? (
+        <div className="space-y-2">
+          <div className="hidden rounded-lg border border-border/70 bg-background/50 px-3 py-2 text-[11px] font-bold text-muted md:grid md:grid-cols-[1.2fr_0.8fr_0.9fr_0.45fr_0.55fr_1.4fr] md:gap-3">
+            <span>상대</span>
+            <span>날짜</span>
+            <span>방식</span>
+            <span>라운드</span>
+            <span>시간</span>
+            <span>이벤트</span>
+          </div>
+          {rows.map((fight) => {
+            const tag = getRecentFightTag(fight, fighterId);
+            const opponentName = getOpponentName(fight);
+            const opponent = fight.opponentId ? (
+              <Link
+                href={`/fighters/${fight.opponentId}`}
+                className="truncate font-semibold text-foreground hover:text-primary"
+              >
+                {opponentName}
+              </Link>
+            ) : (
+              <span className="truncate font-semibold text-foreground">{opponentName}</span>
+            );
+
+            return (
+              <div
+                key={fight.id}
+                className="rounded-lg border border-border bg-background/40 p-3 text-xs md:grid md:grid-cols-[1.2fr_0.8fr_0.9fr_0.45fr_0.55fr_1.4fr] md:items-center md:gap-3"
+              >
+                <div className="mb-2 flex min-w-0 items-center gap-2 md:mb-0">
+                  <ResultChip tag={tag} />
+                  {opponent}
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 md:contents">
+                  <span className="text-muted md:hidden">날짜</span>
+                  <span className="tabular-nums text-foreground">{formatFightDate(fight.eventDate)}</span>
+                  <span className="text-muted md:hidden">방식</span>
+                  <span>{fight.method ? <MethodChip method={fight.method} /> : <span className="text-muted">-</span>}</span>
+                  <span className="text-muted md:hidden">라운드</span>
+                  <span className="tabular-nums text-foreground">{fight.round ? `R${fight.round}` : "-"}</span>
+                  <span className="text-muted md:hidden">시간</span>
+                  <span className="tabular-nums text-foreground">{fight.time ?? "-"}</span>
+                  <span className="text-muted md:hidden">이벤트</span>
+                  <Link
+                    href={`/events/${fight.eventId}`}
+                    className="truncate text-foreground hover:text-primary"
+                  >
+                    {fight.eventNameKo || fight.eventName || "-"}
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-border bg-background/40 px-4 py-8 text-center text-sm text-muted">
+          조건에 맞는 경기 기록이 없습니다.
         </div>
       )}
     </div>
@@ -452,9 +560,7 @@ function FighterDetailClient({ id }: { id: string }) {
                   <h2 className="text-sm font-semibold text-foreground">최근 경기</h2>
                 </div>
                 {recentFights.length > 0 ? (
-                  recentFights.map((f) => (
-                    <RecentFightRow key={f.id} f={f} fighterId={fighter.id} />
-                  ))
+                  <FightRecordTable fights={recentFights} fighterId={fighter.id} />
                 ) : (
                   <p className="text-sm text-muted text-center py-4">경기 기록이 없습니다.</p>
                 )}
