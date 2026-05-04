@@ -16,6 +16,7 @@ import {
   Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatNameKoEn } from "@/lib/format-name";
 import { getFingerprint } from "@/lib/fingerprint";
 import CommentSection from "@/components/comment-section";
 import { MethodChip, ResultChip, type FightResultTag } from "@/components/fight-chips";
@@ -70,8 +71,8 @@ function DetailSkeleton() {
 // ── 파이트 카드 로우 ──
 
 function FightRow({ f }: { f: DbFightCard }) {
-  const aName = f.fighterANameKo || f.fighterAName || "-";
-  const bName = f.fighterBNameKo || f.fighterBName || "-";
+  const aName = formatNameKoEn(f.fighterANameKo, f.fighterAName, { fallback: "-" });
+  const bName = formatNameKoEn(f.fighterBNameKo, f.fighterBName, { fallback: "-" });
   const tagA = getResultTag(f, f.fighterAId);
   const tagB = getResultTag(f, f.fighterBId);
   const finished = tagA !== "-" || tagB !== "-";
@@ -166,8 +167,8 @@ export default function EventDetailClient({ id }: Props) {
   const event = payload?.event;
   const card = payload?.card ?? [];
   const upcoming = isUpcoming(event?.eventDate ?? null);
-  const displayName = event?.nameKo || event?.name || "";
-  const venueText = event?.venueKo || event?.venue;
+  const displayName = formatNameKoEn(event?.nameKo, event?.name);
+  const venueText = formatNameKoEn(event?.venueKo, event?.venue);
 
   const eventIdNum = Number(id);
 

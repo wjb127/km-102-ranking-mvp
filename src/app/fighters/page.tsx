@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Search, Users, X, Loader2, SlidersHorizontal, GitCompareArrows } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatNameKoEn, primaryName, secondaryName } from "@/lib/format-name";
 import { MethodChip, ResultChip } from "@/components/fight-chips";
 import type { DbFighter } from "@/lib/mma-types";
 
@@ -123,8 +124,8 @@ function FighterCard({
 }: FighterCardProps) {
   const { totalFights, winRate } = getFighterStats(fighter);
 
-  const displayName = fighter.fullNameKo || fighter.fullName;
-  const subName = fighter.fullNameKo ? fighter.fullName : null;
+  const displayName = primaryName(fighter.fullNameKo, fighter.fullName);
+  const subName = secondaryName(fighter.fullNameKo, fighter.fullName);
   const nick = fighter.nicknameKo || fighter.nickname;
   const compareDisabled = compareFull && !selected;
 
@@ -293,7 +294,7 @@ function ComparePanel({
           <div className="mb-2 grid grid-cols-[1fr_auto_1fr] items-start gap-3">
             <div className="min-w-0 text-right">
               <p className="truncate text-sm font-bold text-foreground">
-                {left.fullNameKo || left.fullName}
+                {formatNameKoEn(left.fullNameKo, left.fullName)}
               </p>
               <p className="text-[10px] text-muted">{left.weightClass ?? "-"}</p>
             </div>
@@ -302,7 +303,7 @@ function ComparePanel({
             </span>
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-foreground">
-                {right.fullNameKo || right.fullName}
+                {formatNameKoEn(right.fullNameKo, right.fullName)}
               </p>
               <p className="text-[10px] text-muted">{right.weightClass ?? "-"}</p>
             </div>

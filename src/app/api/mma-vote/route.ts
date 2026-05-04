@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm";
 import { db } from "@/db";
 import { fighterOrgRecords, fighters as fightersTbl, goatVotes } from "@/db/schema";
+import { formatNameKoEn } from "@/lib/format-name";
 
 type CategorySlug =
   | "pound-for-pound"
@@ -232,7 +233,7 @@ async function buildCategoryPayload(category: CategorySlug, fingerprint: string)
     .map((row) => ({
       id: String(row.fighterId),
       fighterId: row.fighterId,
-      name: row.fullNameKo || row.fullName,
+      name: formatNameKoEn(row.fullNameKo, row.fullName),
       voteCount: voteCounts.get(row.fighterId) ?? 0,
       voted: myVote === row.fighterId,
     }))
@@ -346,7 +347,7 @@ export async function POST(req: NextRequest) {
       fighter: {
         id: String(candidate.fighterId),
         fighterId: candidate.fighterId,
-        name: candidate.fullNameKo || candidate.fullName,
+        name: formatNameKoEn(candidate.fullNameKo, candidate.fullName),
         voteCount: Number(count),
         voted,
       },

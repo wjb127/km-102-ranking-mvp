@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Tag, ChevronRight, Flame, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatNameKoEn } from "@/lib/format-name";
 import type { DbEventSummary } from "@/lib/mma-types";
 
 // ── 상수 ──
@@ -83,9 +84,9 @@ interface EventCardProps {
 }
 
 function EventCard({ event, index }: EventCardProps) {
-  const venueText = event.venueKo || event.venue;
+  const venueText = formatNameKoEn(event.venueKo, event.venue);
   const upcoming = isUpcoming(event.eventDate);
-  const displayName = event.nameKo || event.name;
+  const displayName = formatNameKoEn(event.nameKo, event.name);
 
   return (
     <motion.div

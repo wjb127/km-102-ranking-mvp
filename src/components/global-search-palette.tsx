@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar, Dumbbell, Loader2, Search, UserRound, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatNameKoEn } from "@/lib/format-name";
 
 interface SearchFighter {
   id: number;
@@ -200,7 +201,7 @@ export default function GlobalSearchPalette({
                           <UserRound className="h-4 w-4 shrink-0 text-primary" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-semibold text-foreground">
-                              {fighter.nameKo || fighter.name}
+                              {formatNameKoEn(fighter.nameKo, fighter.name)}
                             </span>
                             <span className="block truncate text-xs text-muted">
                               {fighter.nicknameKo || fighter.nickname || fighter.weightClass || fighter.name}
@@ -222,7 +223,7 @@ export default function GlobalSearchPalette({
                           <Calendar className="h-4 w-4 shrink-0 text-accent" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-semibold text-foreground">
-                              {event.nameKo || event.name}
+                              {formatNameKoEn(event.nameKo, event.name)}
                             </span>
                             <span className="block truncate text-xs text-muted">
                               {formatDate(event.eventDate)} · {event.venueKo || event.venue || "-"}

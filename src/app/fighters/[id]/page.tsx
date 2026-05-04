@@ -14,6 +14,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatNameKoEn, primaryName, secondaryName } from "@/lib/format-name";
 import { getFingerprint } from "@/lib/fingerprint";
 import CommentSection from "@/components/comment-section";
 import { ResultChip, MethodChip, type FightResultTag } from "@/components/fight-chips";
@@ -260,7 +261,7 @@ function formatFightDate(dateStr: string | null): string {
 }
 
 function getOpponentName(fight: DbRecentFight): string {
-  return fight.opponentNameKo || fight.opponentName || "상대 미정";
+  return formatNameKoEn(fight.opponentNameKo, fight.opponentName, { fallback: "상대 미정" });
 }
 
 function FightRecordTable({
@@ -427,8 +428,8 @@ function FighterDetailClient({ id }: { id: string }) {
   const totalDraws = fighter?.draws ?? 0;
   const totalNC = fighter?.noContests ?? 0;
 
-  const displayName = fighter?.fullNameKo || fighter?.fullName || "";
-  const subName = fighter?.fullNameKo ? fighter.fullName : null;
+  const displayName = primaryName(fighter?.fullNameKo, fighter?.fullName);
+  const subName = secondaryName(fighter?.fullNameKo, fighter?.fullName);
   const nick = fighter?.nicknameKo || fighter?.nickname;
   const nationalityDisplay = fighter?.nationalityKo || fighter?.nationality;
 
