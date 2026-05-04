@@ -381,6 +381,19 @@ export const postLikes = pgTable(
   ]
 );
 
+/** 게시글 신고 */
+export const boardPostReports = pgTable("board_post_reports", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id")
+    .notNull()
+    .references(() => boardPosts.id, { onDelete: "cascade" }),
+  reporterId: uuid("reporter_id").references(() => users.id, { onDelete: "set null" }),
+  reporterFingerprint: varchar("reporter_fingerprint", { length: 100 }),
+  reason: text("reason"),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** MMA 댓글 (폴리모픽: post | fighter | event | fight) */
 export const mmaComments = pgTable(
   "mma_comments",

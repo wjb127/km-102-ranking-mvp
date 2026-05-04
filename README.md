@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MMA 분석 커뮤니티
 
-## Getting Started
+Next.js 16 + TypeScript + Tailwind CSS + Drizzle ORM + Neon PostgreSQL.
+선수/이벤트/경기 자동 동기화, 한국어 음차, 검색, GOAT 투표, 게시판, 댓글, 신고, 관리자 보정 기능 포함.
 
-First, run the development server:
+## 빠른 시작
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.local.example .env.local   # Neon, Cloudinary, balldontlie 키 입력
+pnpm dev                           # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+빌드 검증:
+```bash
+pnpm build
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 주요 디렉토리
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/app/            # Next.js App Router 라우트
+src/app/admin/      # 관리자 페이지 (회원/선수/경기/신고 보정)
+src/app/api/        # REST 엔드포인트 + 인증/CRON/관리자 API
+src/lib/mma-sync.ts # balldontlie API 페이지네이션 동기화
+src/db/schema.ts    # Drizzle 스키마 (Neon Postgres)
+db/migrations/      # 수동 SQL 마이그레이션
+scripts/            # 일괄 번역·수동 sync 스크립트
+docs/HANDOVER.md    # 운영 인수 자료 (배포 URL, 외부 서비스, 관리자 가이드)
+```
 
-## Learn More
+## 운영 인수
 
-To learn more about Next.js, take a look at the following resources:
+`docs/HANDOVER.md` 참고 — 계약서 제5조 ① 산출물 일체 (배포 URL, 외부 계정 인수 절차, 환경변수, 관리자 사용 가이드, Vercel Cron, 마이그레이션, 인수 체크리스트).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 기술 스택
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js 16 App Router (Turbopack)
+- TypeScript / Tailwind CSS 4 / Lucide / Framer Motion
+- Drizzle ORM + Neon Postgres (Pooled)
+- 인증: 자체 JWT 세션 (`src/lib/auth/`)
+- 이미지: Cloudinary (서명 업로드)
+- 외부 데이터: balldontlie MMA API
+- 번역: Anthropic Claude Haiku 4.5 (음차 일괄), DeepL (보조)
+- 배포: Vercel (Cron 포함)

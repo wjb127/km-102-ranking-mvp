@@ -624,6 +624,9 @@ export interface RunMmaSyncOptions {
   maxPages?: number;
   perPage?: number;
   log?: (msg: string) => void;
+  // cron 등에서 최근 N페이지만 부분 동기화하고 싶을 때.
+  // 전체 전적 재계산은 건너뛴다 (별도 풀 sync 필요).
+  allowPartialFights?: boolean;
 }
 
 export interface MmaSyncSummary {
@@ -644,8 +647,9 @@ export async function runMmaSync(opts: RunMmaSyncOptions = {}): Promise<MmaSyncS
   const runFighters = opts.fighters ?? false;
   const runEvents = opts.events ?? false;
   const runFights = opts.fights ?? false;
+  const allowPartialFights = opts.allowPartialFights ?? false;
 
-  if (runFights && maxPages !== Infinity) {
+  if (runFights && maxPages !== Infinity && !allowPartialFights) {
     throw new Error("fights 동기화는 부분 실행 불가 (전적 재계산 무결성 보장 X). maxPages 제거 필요.");
   }
 
