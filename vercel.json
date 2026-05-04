@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sync-mma",
+      "schedule": "0 18 * * *"
+    }
+  ]
+}
