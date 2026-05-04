@@ -55,9 +55,10 @@ export async function POST(req: NextRequest) {
   const fingerprintRaw =
     typeof body.fingerprint === "string" ? body.fingerprint.trim() : "";
 
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  // Vercel env에 trailing newline 들어가면 서명 SHA1이 어긋남 → trim 필수
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
+  const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
+  const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
 
   if (!cloudName || !apiKey || !apiSecret) {
     console.error("[upload] Cloudinary env missing", {
@@ -121,6 +122,10 @@ export async function POST(req: NextRequest) {
     timestamp,
     role: session?.role ?? "anon",
     sub: session?.sub ?? null,
+    paramsToSign,
+    secretLen: apiSecret.length,
+    secretHead: apiSecret.slice(0, 2),
+    secretTail: apiSecret.slice(-2),
   });
 
   return NextResponse.json({
