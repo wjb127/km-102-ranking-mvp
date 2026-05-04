@@ -274,7 +274,6 @@ function WriteForm({ onClose, onSuccess }: WriteFormProps) {
         fd.append("signature", sig.signature);
         fd.append("folder", sig.folder);
         fd.append("allowed_formats", sig.allowedFormats.join(","));
-        fd.append("max_file_size", String(sig.maxFileSize));
 
         const upRes = await fetch(sig.uploadUrl, { method: "POST", body: fd });
         if (!upRes.ok) {

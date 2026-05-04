@@ -106,10 +106,10 @@ export async function POST(req: NextRequest) {
   const timestamp = Math.floor(Date.now() / 1000);
 
   // Cloudinary signature: 파라미터를 key=value 로 정렬하여 연결 + api_secret sha1
+  // max_file_size는 Cloudinary 업로드 서명 검증 대상에 포함되지 않음 → 클라이언트 사전검증용으로만 사용
   const paramsToSign = [
     `allowed_formats=${ALLOWED_FORMATS.join(",")}`,
     `folder=${folder}`,
-    `max_file_size=${MAX_FILE_SIZE}`,
     `timestamp=${timestamp}`,
   ].join("&");
   const signature = createHash("sha1")
