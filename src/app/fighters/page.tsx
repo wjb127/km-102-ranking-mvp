@@ -366,6 +366,8 @@ export default function FightersPage() {
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (weight) params.set("weight", weight);
     if (activeOnly) params.set("active", "1");
+    // KO/SUB/Dec 집계 컬럼 표시용 (fighter_org_records 채워졌을 때 노출)
+    params.set("includeOrgTotals", "1");
     return `/api/mma-fighters?${params.toString()}`;
   };
 
