@@ -59,18 +59,14 @@ function CardSkeleton() {
 
 // ── 메인 페이지 ──
 export default function HomePage() {
-  // 선수 TOP 3 (전역 승수 기준) — 서버에서 active=1 + sort=wins로 정렬해서 받아옴.
-  // 클라이언트에서 자르면 "이름순 첫 50명 중 TOP3" 가 되므로 반드시 서버 정렬 필수.
+  // 선수 TOP 3 (전역 승수 기준) — 검증/필터/정렬 모두 서버에서 수행.
+  // active=1, verified=1(externalId not null), minWins=10, sort=wins, limit=3
   const { data: fightersData } = useSWR<{ data: DbFighter[] }>(
-    "/api/mma-fighters?active=1&sort=wins&limit=50",
+    "/api/mma-fighters?active=1&verified=1&minWins=10&sort=wins&limit=3",
     fetcher,
     { revalidateOnFocus: false }
   );
-  const fighters = fightersData?.data ?? [];
-  // 외부 ID 검증된 선수만 + 통산 10승 이상 (시드 잔재/이상치 차단)
-  const top3 = fighters
-    .filter((f) => f.externalId != null && f.wins >= 10)
-    .slice(0, 3);
+  const top3 = fightersData?.data ?? [];
 
   // 예정 경기 (eventDate >= now)
   const { data: eventsData } = useSWR<{ data: DbEventSummary[] }>(

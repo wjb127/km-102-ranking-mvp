@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, isNotNull, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters, fighterOrgRecords } from "@/db/schema";
 
-// ── GET /api/mma-fighters?search=...&weight=...&sort=...&active=... ──
+// ── GET /api/mma-fighters?search=...&weight=...&sort=...&active=...&verified=...&minWins=... ──
 // career_wins 등은 balldontlie 원본을 그대로 저장. fighter_org_records 는
 // 향후 /fights 유료 sync 대비 보조 집계용.
+// includeOrgTotals=1 일 때만 fighter_org_records 집계 쿼리 실행 (기본 skip).
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("search") ?? "").trim();
   const weight = (searchParams.get("weight") ?? "").trim();
   const sort = (searchParams.get("sort") ?? "name").trim();
   const activeOnly = searchParams.get("active") === "1";
+  const verifiedOnly = searchParams.get("verified") === "1";
+  const minWinsRaw = Number(searchParams.get("minWins") ?? NaN);
+  const minWins = Number.isFinite(minWinsRaw) && minWinsRaw >= 0 ? minWinsRaw : null;
+  const includeOrgTotals = searchParams.get("includeOrgTotals") === "1";
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10) || 50, 1000);
   const offset = Math.max(parseInt(searchParams.get("offset") ?? "0", 10) || 0, 0);
 
@@ -28,6 +33,8 @@ export async function GET(req: NextRequest) {
   }
   if (weight) conditions.push(eq(fighters.weightClass, weight));
   if (activeOnly) conditions.push(eq(fighters.isActive, true));
+  if (verifiedOnly) conditions.push(isNotNull(fighters.externalId));
+  if (minWins !== null) conditions.push(gte(fighters.careerWins, minWins));
 
   const whereExpr = conditions.length === 0
     ? undefined
@@ -53,15 +60,8 @@ export async function GET(req: NextRequest) {
     }
   })();
 
-  // fighter_org_records는 balldontlie /fights 유료 sync 후에만 채워짐.
-  // 비어있는 동안은 leftJoin/GROUP BY 비용 회피하고 0으로 채워 응답.
-  // count(*)가 아니라 단일 행 존재 확인만 수행 (테이블 커져도 비용 일정).
-  const [orgRecordsExists] = await db
-    .select({ id: fighterOrgRecords.id })
-    .from(fighterOrgRecords)
-    .limit(1);
-  const hasOrgRecords = !!orgRecordsExists;
-
+  // fighter_org_records 집계는 includeOrgTotals=1 옵트인일 때만 수행.
+  // 매 요청 exists probe도 제거 — 호출자가 명시할 때만 비용 발생.
   type OrgTotals = {
     fighterId: number;
     winsByKo: number | null;
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
     .offset(offset);
 
   let orgTotalsByFighter: Map<number, OrgTotals> = new Map();
-  if (hasOrgRecords && baseRows.length > 0) {
+  if (includeOrgTotals && baseRows.length > 0) {
     const ids = baseRows.map((r) => r.id);
     const totals = await db
       .select({

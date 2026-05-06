@@ -15,22 +15,22 @@ const EXTRA_FIGHTERS: Record<string, string> = {
   "Andre Amado": "안드레 아마도",
 };
 
-// 이벤트 이름 한글 표기 (UFC vs 패턴 정리)
+// 이벤트 이름 한글 표기 (UFC vs 패턴 — "대" 대신 "vs" 사용)
 const EVENT_MAP: Record<string, string> = {
-  "UFC 315: Muhammad vs. Della Maddalena": "UFC 315: 무함마드 대 델라 마달레나",
-  "UFC 322: Della Maddalena vs. Makhachev": "UFC 322: 델라 마달레나 대 마카체프",
-  "UFC Fight Night: Della Maddalena vs. Prates": "UFC 파이트 나이트: 델라 마달레나 대 프라치스",
-  "UFC 311: Makhachev vs. Moicano": "UFC 311: 마카체프 대 모이카노",
-  "UFC 312: Du Plessis vs. Strickland 2": "UFC 312: 두 플레시스 대 스트릭랜드 2",
-  "UFC 313: Pereira vs. Ankalaev": "UFC 313: 페레이라 대 안칼라예프",
-  "UFC 314: Volkanovski vs. Lopes": "UFC 314: 볼카노프스키 대 로페스",
-  "UFC 316: Dvalishvili vs. O'Malley 2": "UFC 316: 드발리시빌리 대 오말리 2",
-  "UFC 317: Topuria vs. Oliveira": "UFC 317: 토푸리아 대 올리베이라",
-  "UFC 318: Holloway vs. Poirier 3": "UFC 318: 할로웨이 대 포이리에 3",
-  "UFC 319: Du Plessis vs. Chimaev": "UFC 319: 두 플레시스 대 치마예프",
-  "UFC 320: Ankalaev vs. Pereira 2": "UFC 320: 안칼라예프 대 페레이라 2",
-  "UFC 321: Aspinall vs. Gane": "UFC 321: 아스피널 대 간",
-  "UFC 323: Dvalishvili vs. Sandhagen": "UFC 323: 드발리시빌리 대 샌드해이건",
+  "UFC 315: Muhammad vs. Della Maddalena": "UFC 315: 무함마드 vs 델라 마달레나",
+  "UFC 322: Della Maddalena vs. Makhachev": "UFC 322: 델라 마달레나 vs 마카체프",
+  "UFC Fight Night: Della Maddalena vs. Prates": "UFC 파이트 나이트: 델라 마달레나 vs 프라치스",
+  "UFC 311: Makhachev vs. Moicano": "UFC 311: 마카체프 vs 모이카노",
+  "UFC 312: Du Plessis vs. Strickland 2": "UFC 312: 두 플레시스 vs 스트릭랜드 2",
+  "UFC 313: Pereira vs. Ankalaev": "UFC 313: 페레이라 vs 안칼라예프",
+  "UFC 314: Volkanovski vs. Lopes": "UFC 314: 볼카노프스키 vs 로페스",
+  "UFC 316: Dvalishvili vs. O'Malley 2": "UFC 316: 드발리시빌리 vs 오말리 2",
+  "UFC 317: Topuria vs. Oliveira": "UFC 317: 토푸리아 vs 올리베이라",
+  "UFC 318: Holloway vs. Poirier 3": "UFC 318: 할로웨이 vs 포이리에 3",
+  "UFC 319: Du Plessis vs. Chimaev": "UFC 319: 두 플레시스 vs 치마예프",
+  "UFC 320: Ankalaev vs. Pereira 2": "UFC 320: 안칼라예프 vs 페레이라 2",
+  "UFC 321: Aspinall vs. Gane": "UFC 321: 아스피널 vs 간",
+  "UFC 323: Dvalishvili vs. Sandhagen": "UFC 323: 드발리시빌리 vs 샌드해이건",
 };
 
 async function run() {

@@ -256,9 +256,12 @@ function norm(s: string): string {
   return s.replace(/[\u2018\u2019]/g, "'").trim();
 }
 
+// "vs." / "vs" / "Vs" / "VS" / "versus" / "v." / "v" — 모두 허용
+const VS_RX = String.raw`(?:vs\.?|versus|v\.?)`;
+
 function translateTitle(name: string): string | null {
   // 특수 케이스: "UFC 306 – Riyadh Season Noche UFC: O'Malley vs. Dvalishvili"
-  const sp = name.match(/^(UFC\s+\d+)\s+[–-]\s+(.+?):\s*(.+?)\s+vs\.?\s+(.+?)\s*(\d+)?$/i);
+  const sp = name.match(new RegExp(`^(UFC\\s+\\d+)\\s+[–-]\\s+(.+?):\\s*(.+?)\\s+${VS_RX}\\s+(.+?)\\s*(\\d+)?$`, "i"));
   if (sp) {
     const [, prefix, sub, a, b, suffix] = sp;
     const aKo = LAST_NAME_KO[norm(a)];
@@ -270,15 +273,22 @@ function translateTitle(name: string): string | null {
       return `${prefix} – ${subKo}: ${aKo} vs ${bKo}${suffix ? " " + suffix : ""}`;
     }
   }
-  // "UFC NNN: A vs. B" / "UFC Fight Night: A vs. B" / "UFC Freedom NNN: A vs. B"
-  const m = name.match(/^(UFC(?:\s+\d+|\s+Fight\s+Night|\s+Freedom\s+\d+)?(?:\s+on\s+\w+)?):\s*(.+?)\s+vs\.?\s+(.+?)\s*(\d+)?$/i);
+  // 지원 prefix:
+  //   UFC NNN
+  //   UFC Fight Night [NNN]
+  //   UFC Freedom NNN
+  //   UFC on ESPN [NNN] / UFC on FOX [NNN] / UFC on ABC [NNN] (\w+\s+\d* 형태)
+  const m = name.match(new RegExp(
+    `^(UFC(?:\\s+\\d+|\\s+Fight\\s+Night(?:\\s+\\d+)?|\\s+Freedom\\s+\\d+)?(?:\\s+on\\s+\\w+(?:\\s+\\d+)?)?):\\s*(.+?)\\s+${VS_RX}\\s+(.+?)\\s*(\\d+)?$`,
+    "i"
+  ));
   if (!m) return null;
   const [, prefix, a, b, suffix] = m;
   const aKo = LAST_NAME_KO[norm(a)];
   const bKo = LAST_NAME_KO[norm(b)];
   if (!aKo || !bKo) return null;
   const prefixKo = prefix
-    .replace(/UFC\s+Fight\s+Night/i, "UFC 파이트 나이트")
+    .replace(/UFC\s+Fight\s+Night(\s+\d+)?/i, (_, n) => `UFC 파이트 나이트${n ?? ""}`)
     .replace(/UFC\s+Freedom\s+(\d+)/i, (_, n) => `UFC 프리덤 ${n}`)
     .replace(/^UFC(\s+\d+)$/i, (_, n) => `UFC${n}`);
   return `${prefixKo}: ${aKo} vs ${bKo}${suffix ? " " + suffix : ""}`;
@@ -287,7 +297,9 @@ function translateTitle(name: string): string | null {
 async function run() {
   const rows = await db.execute(sql`
     SELECT id, name, name_ko FROM events
-    WHERE name LIKE 'UFC%vs%' AND (name_ko = name OR name_ko LIKE '%vs%' OR name_ko LIKE '%대%')
+    WHERE name ILIKE 'UFC%'
+      AND (name ILIKE '%vs%' OR name ILIKE '%versus%' OR name ~* '\\sv\\.?\\s')
+      AND (name_ko = name OR name_ko ILIKE '%vs%' OR name_ko LIKE '%대%')
     ORDER BY id DESC LIMIT 500
   `);
   let updated = 0;
