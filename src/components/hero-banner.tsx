@@ -24,12 +24,12 @@ interface Slide {
   href: string;
 }
 
-// ── 슬라이드 데이터 (하드코딩) ──
+// ── 슬라이드 데이터 (정적, 날짜/대진 무관 일반 문구) ──
 const SLIDES: Slide[] = [
   {
     type: "notice",
-    title: "UFC 310 메인이벤트 — 판토자 vs 아사쿠라",
-    subtitle: "이번 주말 대박 매치업 분석 보러 가기",
+    title: "다가오는 경기 일정 확인",
+    subtitle: "UFC · ONE · PFL 등 주요 단체 일정 한눈에",
     bgGradient: "from-red-900 via-red-700 to-orange-600",
     href: "/events",
   },
@@ -42,21 +42,21 @@ const SLIDES: Slide[] = [
   },
   {
     type: "hot",
-    title: "실시간 HOT 게시글",
-    subtitle: "맥그리거 컴백설, 라이트급 챔피언 분석 등",
+    title: "선수 검색 · 전적 조회",
+    subtitle: "8000명 이상 MMA 선수 데이터베이스",
     bgGradient: "from-purple-900 via-indigo-800 to-blue-900",
-    href: "/board",
+    href: "/fighters",
   },
   {
     type: "new",
-    title: "신규 선수 DB 업데이트",
-    subtitle: "최근 UFC 경기 결과 자동 반영",
+    title: "선수 DB 자동 업데이트",
+    subtitle: "외부 API 연동으로 최신 전적 반영",
     bgGradient: "from-slate-800 via-gray-800 to-zinc-900",
     href: "/fighters",
   },
   {
     type: "community",
-    title: "MMA 커뮤니티 오픈",
+    title: "MMA 커뮤니티",
     subtitle: "분석 · 토론 · 자유 게시판에서 소통하세요",
     bgGradient: "from-emerald-900 via-teal-800 to-cyan-900",
     href: "/board",
@@ -96,7 +96,7 @@ export function NoticeBanner() {
       <Megaphone className="h-4 w-4 text-primary shrink-0" />
       <p className="flex-1 text-sm text-foreground/80 truncate">
         <span className="font-semibold text-primary mr-2">📢 공지</span>
-        신규 경기 일정 업데이트 — 2026.04.22
+        선수 정보와 경기 일정은 매일 자동 동기화됩니다
       </p>
       {/* 오른쪽: 전체보기 링크 */}
       <Link

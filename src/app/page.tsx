@@ -66,7 +66,9 @@ export default function HomePage() {
     { revalidateOnFocus: false }
   );
   const fighters = fightersData?.data ?? [];
-  const top3 = [...fighters]
+  // 현역 + 외부 ID 검증된 선수만, 통산 승수 desc 정렬
+  const top3 = fighters
+    .filter((f) => f.isActive && f.externalId != null && f.wins >= 10)
     .sort((a, b) => b.wins - a.wins)
     .slice(0, 3);
 

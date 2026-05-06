@@ -257,6 +257,17 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
   async function upsertFighter(fighter: BDLFighter): Promise<number> {
     if (fighterCache.has(fighter.id)) return fighterCache.get(fighter.id)!;
 
+    // 과거 시드 더미 패턴 감지 (external_id 1001-1010, 5001-5003은 임의값으로 사용된 적 있음)
+    if (
+      (fighter.id >= 1001 && fighter.id <= 1010) ||
+      (fighter.id >= 5001 && fighter.id <= 5003)
+    ) {
+      log(
+        `[fighters] ⚠ 과거 시드 패턴 external_id=${fighter.id} 감지. ` +
+        `DB에 시드 잔재 없는지 확인 필요 (현재 응답 선수: ${fighter.name}).`
+      );
+    }
+
     const values = buildFighterValues(fighter);
     const updatePayload = {
       externalId: values.externalId,
@@ -327,6 +338,13 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
 
   async function upsertEvent(event: BDLEvent): Promise<{ id: number; organizationId: number | null }> {
     if (eventCache.has(event.id)) return eventCache.get(event.id)!;
+
+    if (event.id >= 5001 && event.id <= 5003) {
+      log(
+        `[events] ⚠ 과거 시드 패턴 external_id=${event.id} 감지. ` +
+        `DB에 시드 잔재 없는지 확인 필요 (현재 응답 이벤트: ${event.name}).`
+      );
+    }
 
     const organizationId = event.league ? await upsertOrganization(event.league) : null;
     const values = buildEventValues(event, organizationId);
