@@ -55,11 +55,12 @@ export async function GET(req: NextRequest) {
 
   // fighter_org_records는 balldontlie /fights 유료 sync 후에만 채워짐.
   // 비어있는 동안은 leftJoin/GROUP BY 비용 회피하고 0으로 채워 응답.
-  const [orgRecordsCheck] = await db
-    .select({ count: sql<number>`count(*)::int`.as("count") })
+  // count(*)가 아니라 단일 행 존재 확인만 수행 (테이블 커져도 비용 일정).
+  const [orgRecordsExists] = await db
+    .select({ id: fighterOrgRecords.id })
     .from(fighterOrgRecords)
     .limit(1);
-  const hasOrgRecords = (orgRecordsCheck?.count ?? 0) > 0;
+  const hasOrgRecords = !!orgRecordsExists;
 
   type OrgTotals = {
     fighterId: number;

@@ -257,18 +257,25 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
   async function upsertFighter(fighter: BDLFighter): Promise<number> {
     if (fighterCache.has(fighter.id)) return fighterCache.get(fighter.id)!;
 
-    // 과거 시드 더미 패턴 감지 (external_id 1001-1010, 5001-5003은 임의값으로 사용된 적 있음)
+    // 과거 시드 더미 패턴 감지 — 영구 가드.
+    // 2026-05 시드 사고 대응: db/seed.sql 초기 시드가 임의 external_id(1001-1010, 5001-5003)을
+    // 사용했고, balldontlie 진짜 ID와 충돌해 일부 선수 정보가 다른 사람으로 덮였음.
+    // 시드는 폐기됐지만 유사 패턴이 신규 ID로 들어올 경우 운영자가 즉시 인지하도록 유지.
+    // balldontlie 진짜 ID와 겹치는 정상 응답에서도 경고가 날 수 있으므로 차단이 아닌 로그만.
     if (
       (fighter.id >= 1001 && fighter.id <= 1010) ||
       (fighter.id >= 5001 && fighter.id <= 5003)
     ) {
       log(
-        `[fighters] ⚠ 과거 시드 패턴 external_id=${fighter.id} 감지. ` +
+        `[fighters] WARN 과거 시드 패턴 external_id=${fighter.id} 감지. ` +
         `DB에 시드 잔재 없는지 확인 필요 (현재 응답 선수: ${fighter.name}).`
       );
     }
 
     const values = buildFighterValues(fighter);
+    // ⚠ updatePayload에는 fullNameKo/nicknameKo/nationalityKo/weightClassKo/bioKo 등
+    // 한국어/수기 보정 필드를 포함하지 않는다. balldontlie sync는 영문 원본만 갱신하고
+    // 한국어 표기는 LLM 음차/관리자 보정 결과를 보존해야 한다.
     const updatePayload = {
       externalId: values.externalId,
       fullName: values.fullName,
@@ -339,9 +346,10 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
   async function upsertEvent(event: BDLEvent): Promise<{ id: number; organizationId: number | null }> {
     if (eventCache.has(event.id)) return eventCache.get(event.id)!;
 
+    // 과거 시드 더미 패턴 감지 — 2026-05 시드 사고 대응 (위 upsertFighter 주석 참조).
     if (event.id >= 5001 && event.id <= 5003) {
       log(
-        `[events] ⚠ 과거 시드 패턴 external_id=${event.id} 감지. ` +
+        `[events] WARN 과거 시드 패턴 external_id=${event.id} 감지. ` +
         `DB에 시드 잔재 없는지 확인 필요 (현재 응답 이벤트: ${event.name}).`
       );
     }

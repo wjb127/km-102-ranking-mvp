@@ -95,15 +95,15 @@ export function NoticeBanner() {
       {/* 왼쪽: 아이콘 + 공지 텍스트 */}
       <Megaphone className="h-4 w-4 text-primary shrink-0" />
       <p className="flex-1 text-sm text-foreground/80 truncate">
-        <span className="font-semibold text-primary mr-2">📢 공지</span>
+        <span className="font-semibold text-primary mr-2">📢 안내</span>
         선수 정보와 경기 일정은 매일 자동 동기화됩니다
       </p>
-      {/* 오른쪽: 전체보기 링크 */}
+      {/* 오른쪽: 게시판 바로가기 */}
       <Link
         href="/board"
         className="shrink-0 text-xs text-primary hover:text-accent transition-colors whitespace-nowrap"
       >
-        공지 전체보기 &gt;
+        게시판 보기 &gt;
       </Link>
     </div>
   );
