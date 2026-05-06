@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters, fighterOrgRecords } from "@/db/schema";
@@ -53,19 +53,22 @@ export async function GET(req: NextRequest) {
     }
   })();
 
-  // 선수별 단체 전적 합계 (있을 경우만 채워짐)
-  const totals = db
-    .select({
-      fighterId: fighterOrgRecords.fighterId,
-      winsByKo: sql<number>`SUM(${fighterOrgRecords.winsByKo})::int`.as("wins_by_ko"),
-      winsBySub: sql<number>`SUM(${fighterOrgRecords.winsBySub})::int`.as("wins_by_sub"),
-      winsByDec: sql<number>`SUM(${fighterOrgRecords.winsByDec})::int`.as("wins_by_dec"),
-    })
+  // fighter_org_records는 balldontlie /fights 유료 sync 후에만 채워짐.
+  // 비어있는 동안은 leftJoin/GROUP BY 비용 회피하고 0으로 채워 응답.
+  const [orgRecordsCheck] = await db
+    .select({ count: sql<number>`count(*)::int`.as("count") })
     .from(fighterOrgRecords)
-    .groupBy(fighterOrgRecords.fighterId)
-    .as("totals");
+    .limit(1);
+  const hasOrgRecords = (orgRecordsCheck?.count ?? 0) > 0;
 
-  const rows = await db
+  type OrgTotals = {
+    fighterId: number;
+    winsByKo: number | null;
+    winsBySub: number | null;
+    winsByDec: number | null;
+  };
+
+  const baseRows = await db
     .select({
       id: fighters.id,
       externalId: fighters.externalId,
@@ -82,16 +85,28 @@ export async function GET(req: NextRequest) {
       losses: fighters.careerLosses,
       draws: fighters.careerDraws,
       noContests: fighters.careerNoContests,
-      winsByKo: totals.winsByKo,
-      winsBySub: totals.winsBySub,
-      winsByDec: totals.winsByDec,
     })
     .from(fighters)
-    .leftJoin(totals, eq(totals.fighterId, fighters.id))
     .where(whereExpr)
     .orderBy(...orderBy)
     .limit(limit)
     .offset(offset);
+
+  let orgTotalsByFighter: Map<number, OrgTotals> = new Map();
+  if (hasOrgRecords && baseRows.length > 0) {
+    const ids = baseRows.map((r) => r.id);
+    const totals = await db
+      .select({
+        fighterId: fighterOrgRecords.fighterId,
+        winsByKo: sql<number>`SUM(${fighterOrgRecords.winsByKo})::int`.as("wins_by_ko"),
+        winsBySub: sql<number>`SUM(${fighterOrgRecords.winsBySub})::int`.as("wins_by_sub"),
+        winsByDec: sql<number>`SUM(${fighterOrgRecords.winsByDec})::int`.as("wins_by_dec"),
+      })
+      .from(fighterOrgRecords)
+      .where(inArray(fighterOrgRecords.fighterId, ids))
+      .groupBy(fighterOrgRecords.fighterId);
+    orgTotalsByFighter = new Map(totals.map((t) => [t.fighterId, t]));
+  }
 
   // 전체 건수 (페이지네이션용)
   const [{ total }] = await db
@@ -99,12 +114,15 @@ export async function GET(req: NextRequest) {
     .from(fighters)
     .where(whereExpr);
 
-  const data = rows.map((r) => ({
-    ...r,
-    winsByKo: r.winsByKo ?? 0,
-    winsBySub: r.winsBySub ?? 0,
-    winsByDec: r.winsByDec ?? 0,
-  }));
+  const data = baseRows.map((r) => {
+    const t = orgTotalsByFighter.get(r.id);
+    return {
+      ...r,
+      winsByKo: t?.winsByKo ?? 0,
+      winsBySub: t?.winsBySub ?? 0,
+      winsByDec: t?.winsByDec ?? 0,
+    };
+  });
 
   return NextResponse.json({ success: true, data, total, limit, offset });
 }
