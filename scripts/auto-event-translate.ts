@@ -267,7 +267,7 @@ function translateTitle(name: string): string | null {
       const subKo = sub
         .replace(/Riyadh\s+Season/i, "리야드 시즌")
         .replace(/Noche\s+UFC/i, "노체 UFC");
-      return `${prefix} – ${subKo}: ${aKo} 대 ${bKo}${suffix ? " " + suffix : ""}`;
+      return `${prefix} – ${subKo}: ${aKo} vs ${bKo}${suffix ? " " + suffix : ""}`;
     }
   }
   // "UFC NNN: A vs. B" / "UFC Fight Night: A vs. B" / "UFC Freedom NNN: A vs. B"
@@ -281,7 +281,7 @@ function translateTitle(name: string): string | null {
     .replace(/UFC\s+Fight\s+Night/i, "UFC 파이트 나이트")
     .replace(/UFC\s+Freedom\s+(\d+)/i, (_, n) => `UFC 프리덤 ${n}`)
     .replace(/^UFC(\s+\d+)$/i, (_, n) => `UFC${n}`);
-  return `${prefixKo}: ${aKo} 대 ${bKo}${suffix ? " " + suffix : ""}`;
+  return `${prefixKo}: ${aKo} vs ${bKo}${suffix ? " " + suffix : ""}`;
 }
 
 async function run() {
