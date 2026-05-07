@@ -291,13 +291,15 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
       .limit(1);
 
     // 과거 시드 더미 패턴 감지 — 2026-05 시드 사고 대응.
-    // db/seed.sql 초기 시드가 임의 external_id(1001-1010, 5001-5003)을 썼고
-    // balldontlie 실 ID와 충돌해 다른 선수로 덮인 사례 존재. 시드는 폐기됐지만
+    // db/seed.sql 초기 시드가 임의 external_id(1001-1010, 2001-2014, 5001-5003)을 썼고
+    // balldontlie 실 ID와 충돌해 다른 선수로 덮인 사례 존재. 영문은 sync로 갱신됐지만
+    // 한국어 보존 정책 때문에 시드 한국어 잔재가 살아남는 패턴 확인됨 (2026-05-08).
     // 동일 ID에 DB가 가진 이름과 API 응답 이름이 다르면 시드 잔재 가능성 있음.
     // 정상 일치(같은 선수)는 노이즈이므로 mismatch 만 WARN.
     if (
       existing &&
       ((fighter.id >= 1001 && fighter.id <= 1010) ||
+        (fighter.id >= 2001 && fighter.id <= 2014) ||
         (fighter.id >= 5001 && fighter.id <= 5003)) &&
       existing.fullName !== values.fullName
     ) {
