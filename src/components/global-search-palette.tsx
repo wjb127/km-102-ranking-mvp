@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar, Dumbbell, Loader2, Search, UserRound, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNameKoEn } from "@/lib/format-name";
+import { weightKo } from "@/lib/weight-class";
 
 interface SearchFighter {
   id: number;
@@ -204,7 +205,7 @@ export default function GlobalSearchPalette({
                               {formatNameKoEn(fighter.nameKo, fighter.name)}
                             </span>
                             <span className="block truncate text-xs text-muted">
-                              {fighter.nicknameKo || fighter.nickname || fighter.weightClass || fighter.name}
+                              {fighter.nicknameKo || fighter.nickname || (fighter.weightClass ? weightKo(fighter.weightClass) : fighter.name)}
                             </span>
                           </span>
                         </Link>
@@ -244,7 +245,7 @@ export default function GlobalSearchPalette({
                         >
                           <Dumbbell className="h-4 w-4 shrink-0 text-muted" />
                           <span className="text-sm font-semibold text-foreground">
-                            {weight.name}
+                            {weightKo(weight.name)}
                           </span>
                         </Link>
                       ))}
