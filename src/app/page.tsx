@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DbFighter, DbEventSummary } from "@/lib/mma-types";
+import { weightKo } from "@/lib/weight-class";
 import { HeroBanner, NoticeBanner } from "@/components/hero-banner";
 
 // ── 타입 ──
@@ -230,7 +231,7 @@ export default function HomePage() {
                       {fighter.weightClass && (
                         <div className="mt-2 flex items-center gap-2">
                           <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                            {fighter.weightClass}
+                            {weightKo(fighter.weightClass)}
                           </span>
                         </div>
                       )}

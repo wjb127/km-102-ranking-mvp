@@ -19,6 +19,7 @@ import { getFingerprint } from "@/lib/fingerprint";
 import CommentSection from "@/components/comment-section";
 import { ResultChip, MethodChip, type FightResultTag } from "@/components/fight-chips";
 import type { DbFighter, DbOrgRecord, DbRecentFight } from "@/lib/mma-types";
+import { weightKo } from "@/lib/weight-class";
 
 // ── SWR fetcher ──
 
@@ -529,7 +530,7 @@ function FighterDetailClient({ id }: { id: string }) {
               >
                 <h2 className="text-sm font-semibold text-muted mb-3">선수 정보</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  <InfoItem icon={Dumbbell} label="체급" value={fighter.weightClass ?? "-"} />
+                  <InfoItem icon={Dumbbell} label="체급" value={weightKo(fighter.weightClass)} />
                   <InfoItem icon={Globe} label="국적" value={nationalityDisplay ?? "-"} />
                   <InfoItem
                     icon={Ruler}

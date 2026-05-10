@@ -9,23 +9,14 @@ import { cn } from "@/lib/utils";
 import { formatNameKoEn, primaryName, secondaryName } from "@/lib/format-name";
 import { MethodChip, ResultChip } from "@/components/fight-chips";
 import type { DbFighter } from "@/lib/mma-types";
+import {
+  WEIGHT_CLASSES_MEN,
+  WEIGHT_CLASSES_WOMEN,
+  WEIGHT_CLASSES_OTHER,
+  weightKo,
+} from "@/lib/weight-class";
 
 const PAGE_SIZE = 60;
-
-// 표준 체급 (UFC 기준 + 유니섹스 포함)
-const WEIGHT_CLASSES = [
-  "Strawweight",
-  "Flyweight",
-  "Bantamweight",
-  "Featherweight",
-  "Lightweight",
-  "Welterweight",
-  "Middleweight",
-  "Light Heavyweight",
-  "Heavyweight",
-  "Openweight",
-  "Catchweight",
-] as const;
 
 const SORT_OPTIONS = [
   { value: "name", label: "이름순" },
@@ -225,7 +216,7 @@ function FighterCard({
           {fighter.weightClass && (
             <div className="flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-muted" />
-              <span className="text-xs text-muted">{fighter.weightClass}</span>
+              <span className="text-xs text-muted">{weightKo(fighter.weightClass)}</span>
             </div>
           )}
         </Link>
@@ -296,7 +287,7 @@ function ComparePanel({
               <p className="truncate text-sm font-bold text-foreground">
                 {formatNameKoEn(left.fullNameKo, left.fullName)}
               </p>
-              <p className="text-[10px] text-muted">{left.weightClass ?? "-"}</p>
+              <p className="text-[10px] text-muted">{weightKo(left.weightClass)}</p>
             </div>
             <span className="rounded-md bg-border/50 px-2 py-1 text-[10px] font-bold text-muted">
               VS
@@ -305,7 +296,7 @@ function ComparePanel({
               <p className="truncate text-sm font-bold text-foreground">
                 {formatNameKoEn(right.fullNameKo, right.fullName)}
               </p>
-              <p className="text-[10px] text-muted">{right.weightClass ?? "-"}</p>
+              <p className="text-[10px] text-muted">{weightKo(right.weightClass)}</p>
             </div>
           </div>
           <CompareValue label="전적" left={`${left.wins}-${left.losses}-${left.draws}`} right={`${right.wins}-${right.losses}-${right.draws}`} />
@@ -501,11 +492,27 @@ export default function FightersPage() {
             className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer"
           >
             <option value="">전체 체급</option>
-            {WEIGHT_CLASSES.map((wc) => (
-              <option key={wc} value={wc}>
-                {wc}
-              </option>
-            ))}
+            <optgroup label="남자부">
+              {WEIGHT_CLASSES_MEN.map((wc) => (
+                <option key={wc.value} value={wc.value}>
+                  {wc.label}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="여자부">
+              {WEIGHT_CLASSES_WOMEN.map((wc) => (
+                <option key={wc.value} value={wc.value}>
+                  {wc.label}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="기타">
+              {WEIGHT_CLASSES_OTHER.map((wc) => (
+                <option key={wc.value} value={wc.value}>
+                  {wc.label}
+                </option>
+              ))}
+            </optgroup>
           </select>
 
           <label

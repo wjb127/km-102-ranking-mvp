@@ -21,6 +21,7 @@ import { getFingerprint } from "@/lib/fingerprint";
 import CommentSection from "@/components/comment-section";
 import { MethodChip, ResultChip, type FightResultTag } from "@/components/fight-chips";
 import type { DbEventSummary, DbFightCard } from "@/lib/mma-types";
+import { weightKo } from "@/lib/weight-class";
 
 // ── 유틸 ──
 
@@ -102,7 +103,7 @@ function FightRow({ f }: { f: DbFightCard }) {
             </span>
           )}
           {f.weightClass && (
-            <span className="text-[10px] text-muted">{f.weightClass}</span>
+            <span className="text-[10px] text-muted">{weightKo(f.weightClass)}</span>
           )}
         </div>
         {(f.method || f.round || f.time) && (
