@@ -26,6 +26,8 @@ export async function GET(
       createdAt: messages.createdAt,
       senderId: messages.senderId,
       receiverId: messages.receiverId,
+      isDeletedSender: messages.isDeletedSender,
+      isDeletedReceiver: messages.isDeletedReceiver,
     })
     .from(messages)
     .where(eq(messages.id, msgId))
@@ -36,6 +38,14 @@ export async function GET(
   }
   if (row.senderId !== session.sub && row.receiverId !== session.sub) {
     return NextResponse.json({ success: false, error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  // 본인이 삭제한 방향의 쪽지면 노출 차단
+  const deletedForMe =
+    (row.senderId === session.sub && row.isDeletedSender) ||
+    (row.receiverId === session.sub && row.isDeletedReceiver);
+  if (deletedForMe) {
+    return NextResponse.json({ success: false, error: "쪽지를 찾을 수 없습니다." }, { status: 404 });
   }
 
   // 상대방 닉네임 조회

@@ -303,7 +303,7 @@ async function run() {
     ORDER BY id DESC LIMIT 500
   `);
   let updated = 0;
-  let unmapped: { id: number; name: string }[] = [];
+  const unmapped: { id: number; name: string }[] = [];
   const rs = ((rows as unknown as { rows?: unknown[] }).rows ?? rows) as { id: number; name: string; name_ko: string }[];
   for (const r of rs) {
     const t = translateTitle(r.name);

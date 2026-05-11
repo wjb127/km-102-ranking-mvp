@@ -138,8 +138,6 @@ async function main() {
   const batches = chunk(sliced, BATCH_SIZE);
   let updated = 0;
   let failed = 0;
-  let totalIn = 0;
-  let totalOut = 0;
 
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];

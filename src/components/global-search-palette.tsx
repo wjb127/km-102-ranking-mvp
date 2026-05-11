@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar, Dumbbell, Loader2, Search, UserRound, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { formatNameKoEn } from "@/lib/format-name";
 import { weightKo } from "@/lib/weight-class";
 
@@ -66,7 +64,6 @@ export default function GlobalSearchPalette({
 }: {
   variant: "desktop" | "mobile";
 }) {
-  const pathname = usePathname();
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -93,10 +90,6 @@ export default function GlobalSearchPalette({
   }, [open]);
 
   useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query.trim());
     }, 180);
@@ -104,13 +97,11 @@ export default function GlobalSearchPalette({
   }, [query]);
 
   useEffect(() => {
-    if (!open || debouncedQuery.length < 1) {
-      setData(null);
-      setLoading(false);
-      return;
-    }
+    if (!open || debouncedQuery.length < 1) return;
 
     const controller = new AbortController();
+    // 외부 시스템 fetch 시작 표시 — debouncedQuery 변경에 응답하는 사이드 이펙트
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}&limit=6`, {
       signal: controller.signal,
@@ -129,10 +120,13 @@ export default function GlobalSearchPalette({
     return () => controller.abort();
   }, [debouncedQuery, open]);
 
+  const displayLoading = loading && open && debouncedQuery.length >= 1;
+  const displayData = open && debouncedQuery.length >= 1 ? data : null;
+
   const totalResults = useMemo(() => {
-    if (!data) return 0;
-    return data.fighters.length + data.events.length + data.weights.length;
-  }, [data]);
+    if (!displayData) return 0;
+    return displayData.fighters.length + displayData.events.length + displayData.weights.length;
+  }, [displayData]);
 
   return (
     <>
@@ -169,7 +163,7 @@ export default function GlobalSearchPalette({
                 placeholder="선수, 이벤트, 체급 검색..."
                 className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted/60"
               />
-              {loading && <Loader2 className="h-4 w-4 animate-spin text-muted" />}
+              {displayLoading && <Loader2 className="h-4 w-4 animate-spin text-muted" />}
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -185,18 +179,19 @@ export default function GlobalSearchPalette({
                 <div className="py-8 text-center text-sm text-muted">
                   Cmd/Ctrl+K로 열고 바로 검색하세요.
                 </div>
-              ) : totalResults === 0 && !loading ? (
+              ) : totalResults === 0 && !displayLoading ? (
                 <div className="py-8 text-center text-sm text-muted">
                   검색 결과가 없습니다.
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {data?.fighters.length ? (
+                  {displayData?.fighters.length ? (
                     <ResultGroup title="선수">
-                      {data.fighters.map((fighter) => (
+                      {displayData.fighters.map((fighter) => (
                         <Link
                           key={`fighter-${fighter.id}`}
                           href={fighter.href}
+                          onClick={() => setOpen(false)}
                           className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-surface"
                         >
                           <UserRound className="h-4 w-4 shrink-0 text-primary" />
@@ -213,12 +208,13 @@ export default function GlobalSearchPalette({
                     </ResultGroup>
                   ) : null}
 
-                  {data?.events.length ? (
+                  {displayData?.events.length ? (
                     <ResultGroup title="이벤트">
-                      {data.events.map((event) => (
+                      {displayData.events.map((event) => (
                         <Link
                           key={`event-${event.id}`}
                           href={event.href}
+                          onClick={() => setOpen(false)}
                           className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-surface"
                         >
                           <Calendar className="h-4 w-4 shrink-0 text-accent" />
@@ -235,12 +231,13 @@ export default function GlobalSearchPalette({
                     </ResultGroup>
                   ) : null}
 
-                  {data?.weights.length ? (
+                  {displayData?.weights.length ? (
                     <ResultGroup title="체급">
-                      {data.weights.map((weight) => (
+                      {displayData.weights.map((weight) => (
                         <Link
                           key={`weight-${weight.name}`}
                           href={weight.href}
+                          onClick={() => setOpen(false)}
                           className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-surface"
                         >
                           <Dumbbell className="h-4 w-4 shrink-0 text-muted" />

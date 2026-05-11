@@ -119,13 +119,7 @@ export async function POST(req: NextRequest) {
 
   console.info("[upload] signature issued", {
     folder,
-    timestamp,
     role: session?.role ?? "anon",
-    sub: session?.sub ?? null,
-    paramsToSign,
-    secretLen: apiSecret.length,
-    secretHead: apiSecret.slice(0, 2),
-    secretTail: apiSecret.slice(-2),
   });
 
   return NextResponse.json({
