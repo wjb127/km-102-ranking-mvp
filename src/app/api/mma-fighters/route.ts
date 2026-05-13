@@ -18,10 +18,13 @@ export async function GET(req: NextRequest) {
   const minWinsRaw = Number(searchParams.get("minWins") ?? NaN);
   const minWins = Number.isFinite(minWinsRaw) && minWinsRaw >= 0 ? minWinsRaw : null;
   const includeOrgTotals = searchParams.get("includeOrgTotals") === "1";
+  // 외부 API 결측치(체급 없음) 행 공개 노출 차단. 관리자/admin은 includeIncomplete=1로 우회
+  const includeIncomplete = searchParams.get("includeIncomplete") === "1";
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10) || 50, 1000);
   const offset = Math.max(parseInt(searchParams.get("offset") ?? "0", 10) || 0, 0);
 
   const conditions: SQL[] = [];
+  if (!includeIncomplete) conditions.push(isNotNull(fighters.weightClass));
   if (q) {
     const searchCond = or(
       ilike(fighters.fullName, `%${q}%`),
