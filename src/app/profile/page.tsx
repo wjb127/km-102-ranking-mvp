@@ -12,6 +12,8 @@ import {
   MessageSquare,
   AlertTriangle,
   KeyRound,
+  Bookmark,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +43,25 @@ interface MyComment {
   createdAt: string;
 }
 
+interface MyBookmark {
+  bookmarkId: number;
+  createdAt: string;
+  fighter: {
+    id: number;
+    fullName: string;
+    fullNameKo: string | null;
+    nickname: string | null;
+    nicknameKo: string | null;
+    weightClass: string | null;
+    nationality: string | null;
+    nationalityKo: string | null;
+    careerWins: number;
+    careerLosses: number;
+    careerDraws: number;
+    imageUrl: string | null;
+  };
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const [loaded, setLoaded] = useState(false);
@@ -61,6 +82,9 @@ export default function ProfilePage() {
   // 내 글/댓글
   const [myPosts, setMyPosts] = useState<MyPost[]>([]);
   const [myComments, setMyComments] = useState<MyComment[]>([]);
+
+  // 북마크 선수
+  const [bookmarks, setBookmarks] = useState<MyBookmark[]>([]);
 
   // 탈퇴 모달
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -85,15 +109,18 @@ export default function ProfilePage() {
     (async () => {
       const p = await loadProfile();
       if (p) {
-        // 내 글/댓글 병렬 조회
-        const [postsRes, commentsRes] = await Promise.all([
+        // 내 글/댓글/북마크 병렬 조회
+        const [postsRes, commentsRes, bookmarksRes] = await Promise.all([
           fetch("/api/profile/posts?limit=10", { cache: "no-store" }),
           fetch("/api/profile/comments?limit=10", { cache: "no-store" }),
+          fetch("/api/fighter-bookmarks", { cache: "no-store" }),
         ]);
         const postsJson = await postsRes.json();
         const commentsJson = await commentsRes.json();
+        const bookmarksJson = await bookmarksRes.json();
         if (postsJson?.success) setMyPosts(postsJson.data);
         if (commentsJson?.success) setMyComments(commentsJson.data);
+        if (bookmarksJson?.success) setBookmarks(bookmarksJson.data);
       }
       setLoaded(true);
     })();
@@ -163,6 +190,19 @@ export default function ProfilePage() {
       setConfirmPassword("");
     } finally {
       setPwBusy(false);
+    }
+  }
+
+  async function handleRemoveBookmark(fighterId: number) {
+    const prev = bookmarks;
+    setBookmarks((list) => list.filter((b) => b.fighter.id !== fighterId));
+    try {
+      const res = await fetch(`/api/fighter-bookmarks?fighterId=${fighterId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setBookmarks(prev);
     }
   }
 
@@ -342,6 +382,69 @@ export default function ProfilePage() {
               {pwBusy ? "변경 중..." : "비밀번호 변경"}
             </button>
           </form>
+        </section>
+
+        {/* 즐겨찾기 선수 */}
+        <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--foreground)]">
+            <Bookmark className="h-4 w-4 text-[var(--primary)]" /> 즐겨찾기 선수
+            <span className="text-xs font-normal text-[var(--muted)]">({bookmarks.length}명)</span>
+          </h3>
+          {bookmarks.length === 0 ? (
+            <p className="text-sm text-[var(--muted)]">
+              아직 즐겨찾기에 추가한 선수가 없습니다. 선수 프로필에서 &quot;즐겨찾기&quot; 버튼으로 추가해보세요.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+              {bookmarks.map((b) => {
+                const name = b.fighter.fullNameKo || b.fighter.fullName;
+                const sub = b.fighter.fullNameKo ? b.fighter.fullName : null;
+                const nat = b.fighter.nationalityKo || b.fighter.nationality;
+                return (
+                  <div
+                    key={b.bookmarkId}
+                    className="group relative flex items-center gap-3 rounded-lg border border-[var(--border)]/60 bg-[var(--background)]/30 p-3 transition-colors hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/5"
+                  >
+                    <Link
+                      href={`/fighters/${b.fighter.id}`}
+                      className="flex flex-1 items-center gap-3 min-w-0"
+                    >
+                      {b.fighter.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={b.fighter.imageUrl}
+                          alt={name}
+                          className="h-10 w-10 rounded-full object-cover border border-[var(--border)]/60"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-[var(--border)]/40 flex items-center justify-center text-xs text-[var(--muted)]">
+                          {name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-[var(--foreground)]">
+                          {name}
+                        </p>
+                        <p className="truncate text-[11px] text-[var(--muted)]">
+                          {b.fighter.careerWins}승 {b.fighter.careerLosses}패 {b.fighter.careerDraws}무
+                          {nat ? ` · ${nat}` : ""}
+                          {sub ? ` · ${sub}` : ""}
+                        </p>
+                      </div>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveBookmark(b.fighter.id)}
+                      className="flex-shrink-0 rounded-md p-1.5 text-[var(--muted)] hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] transition-colors"
+                      aria-label="즐겨찾기에서 제거"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* 내 게시글 */}

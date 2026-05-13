@@ -449,6 +449,25 @@ export const messages = pgTable(
   ]
 );
 
+/** 선수 즐겨찾기/북마크 */
+export const fighterBookmarks = pgTable(
+  "fighter_bookmarks",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    fighterId: integer("fighter_id")
+      .notNull()
+      .references(() => fighters.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("fighter_bookmarks_user_fighter_unique").on(t.userId, t.fighterId),
+    index("idx_fighter_bookmarks_user").on(t.userId, t.createdAt),
+  ]
+);
+
 /** 번역 캐시 */
 export const translations = pgTable(
   "translations",

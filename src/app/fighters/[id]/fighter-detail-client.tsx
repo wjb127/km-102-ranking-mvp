@@ -12,6 +12,8 @@ import {
   Dumbbell,
   Trophy,
   Calendar,
+  Bookmark,
+  BookmarkCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNameKoEn, primaryName, secondaryName } from "@/lib/format-name";
@@ -394,6 +396,88 @@ function FightRecordTable({
 
 // ── 상세 클라이언트 컴포넌트 ──
 
+// ── 북마크 토글 버튼 ──
+// 비로그인 사용자는 /login 으로 안내. 401 응답은 미로그인 = 비표시.
+function BookmarkButton({ fighterId }: { fighterId: number }) {
+  const { data, mutate, isLoading } = useSWR<{
+    success: boolean;
+    data: { bookmarked: boolean };
+    error?: string;
+  }>(
+    fighterId > 0 ? `/api/fighter-bookmarks/check?fighterId=${fighterId}` : null,
+    (url: string) => fetch(url).then((r) => r.json()),
+    { revalidateOnFocus: false }
+  );
+
+  const [pending, setPending] = useState(false);
+
+  // 로그인 필요 (401) — 비표시
+  const isAuthError = data && data.success === false;
+  const bookmarked = !!data?.data?.bookmarked;
+
+  if (isAuthError) {
+    return (
+      <Link
+        href="/login"
+        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground hover:border-primary/40 transition-colors"
+        title="로그인 후 즐겨찾기에 추가할 수 있습니다"
+      >
+        <Bookmark className="w-3.5 h-3.5" />
+        <span>즐겨찾기</span>
+      </Link>
+    );
+  }
+
+  async function toggle() {
+    if (pending || isLoading) return;
+    setPending(true);
+    try {
+      if (bookmarked) {
+        await fetch(`/api/fighter-bookmarks?fighterId=${fighterId}`, {
+          method: "DELETE",
+        });
+      } else {
+        await fetch("/api/fighter-bookmarks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fighterId }),
+        });
+      }
+      await mutate();
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={pending || isLoading}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+        bookmarked
+          ? "border-primary/60 bg-primary/10 text-primary"
+          : "border-border bg-surface text-muted hover:text-foreground hover:border-primary/40",
+        (pending || isLoading) && "opacity-60 cursor-not-allowed"
+      )}
+      aria-pressed={bookmarked}
+    >
+      {bookmarked ? (
+        <>
+          <BookmarkCheck className="w-3.5 h-3.5" />
+          <span>즐겨찾기 됨</span>
+        </>
+      ) : (
+        <>
+          <Bookmark className="w-3.5 h-3.5" />
+          <span>즐겨찾기</span>
+        </>
+      )}
+    </button>
+  );
+}
+
 export default function FighterDetailClient({ id }: { id: string }) {
   const [fingerprint, setFingerprint] = useState("");
 
@@ -443,13 +527,16 @@ export default function FighterDetailClient({ id }: { id: string }) {
         </div>
 
         <div className="relative z-10 max-w-3xl mx-auto px-4">
-          <Link
-            href="/fighters"
-            className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>선수 목록</span>
-          </Link>
+          <div className="flex items-center justify-between mb-6">
+            <Link
+              href="/fighters"
+              className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>선수 목록</span>
+            </Link>
+            {fighter && <BookmarkButton fighterId={fighter.id} />}
+          </div>
 
           {isLoading ? (
             <DetailSkeleton />
