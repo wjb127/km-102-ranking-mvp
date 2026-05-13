@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>클라이언트 문의응대 메시지</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+    max-width: 760px;
+    margin: 40px auto;
+    padding: 0 20px 60px;
+    background: #f7f7f9;
+    color: #1a1a1a;
+    line-height: 1.7;
+  }
+  h1 {
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: #555;
+    font-weight: 600;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  button {
+    padding: 8px 14px;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  button:hover { background: #f0f0f0; border-color: #888; }
+  button.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  button.primary:hover { background: #333; }
+  .message {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 28px 32px;
+    white-space: pre-wrap;
+    font-size: 14.5px;
+    line-height: 1.75;
+    user-select: text;
+  }
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<h1>클라이언트 문의응대 메시지 (km-102 / 4848)</h1>
+
+<div class="actions">
+  <button class="primary" onclick="copyMessage()">전체 복사</button>
+  <button onclick="selectAll()">전체 선택</button>
+</div>
+
+<div class="message" id="msg">안녕하세요. 1차 구현 마무리 단계로, 다음 사항 확인 부탁드립니다.
+
+1. 파이트 카드(경기 결과) 데이터 처리 방향
+앞서 안내드린 두 가지 중 선호 방향 알려주시면 즉시 반영하겠습니다.
+
+a. balldontlie GOAT 플랜 업그레이드 후 fights 엔드포인트 연동 — 결제 후 API 키 권한이 즉시 풀려 자동 동기화로 채워집니다. 정확한 월 구독 금액은 공식 페이지(https://docs.balldontlie.io)에서 확인하실 수 있으며, 가입/결제 가이드 필요하시면 별도로 정리해드리겠습니다.
+b. 파이트 카드 영역 임시 숨김 — 데이터 확보 시점까지 UI에서 비활성. 유료 전환 시점에 다시 노출하면 됩니다.
+
+2. 도메인 진행 여부
+지난번 안내드린 가비아 가입과 도메인 구매 진행 여부 확인 부탁드립니다. 현재 임시 도메인(km-102-ranking-mvp.vercel.app)으로 운영 중이며, 도메인 정보 공유해주시면 연결 작업 마무리해드리겠습니다. 운영 오픈 시점에 맞춰 진행하셔도 됩니다.
+
+3. 잔금 일정
+초기 협의된 1차 구현 범위(GOAT 투표, 선수 DB, 게시판, 관리자 대시보드, 쪽지, 이미지 업로드, 자동 동기화 등) 전체 반영 완료 상태입니다. 추가 보정(이름/이벤트 번역, 더미 데이터 정리, 여성부 필터, 체급 한글 표기)도 모두 마쳤습니다. 검수 마치시는 대로 잔금 진행 일정 공유 부탁드립니다.
+
+4. 추가 피드백
+혹시 사용 중 발견하신 보완 요청 있으시면 정리해주시면 일괄 반영하겠습니다. 디시인사이드 톤의 게시판 UX, 메인 배너 카피, 카테고리 구성 등 자유롭게 말씀 주셔도 됩니다.
+
+회신 주시면 우선순위 잡아 바로 진행하겠습니다.</div>
+
+<div class="toast" id="toast">복사 완료</div>
+
+<script>
+function copyMessage() {
+  const text = document.getElementById('msg').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1500);
+  });
+}
+function selectAll() {
+  const range = document.createRange();
+  range.selectNodeContents(document.getElementById('msg'));
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+</script>
+
+</body>
+</html>
