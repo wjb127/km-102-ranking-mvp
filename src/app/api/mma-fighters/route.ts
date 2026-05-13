@@ -24,7 +24,12 @@ export async function GET(req: NextRequest) {
   const offset = Math.max(parseInt(searchParams.get("offset") ?? "0", 10) || 0, 0);
 
   const conditions: SQL[] = [];
-  if (!includeIncomplete) conditions.push(isNotNull(fighters.weightClass));
+  if (!includeIncomplete) {
+    // 체급 결측 + placeholder 이름("Fighter 12345") + 전적 0-0-0 행 공개 차단
+    conditions.push(isNotNull(fighters.weightClass));
+    conditions.push(sql`${fighters.fullName} !~ '^Fighter [0-9]+$'`);
+    conditions.push(sql`(${fighters.careerWins} + ${fighters.careerLosses} + ${fighters.careerDraws}) > 0`);
+  }
   if (q) {
     const searchCond = or(
       ilike(fighters.fullName, `%${q}%`),

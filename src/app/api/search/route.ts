@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, desc, ilike, isNotNull, or } from "drizzle-orm";
+import { and, desc, ilike, isNotNull, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters, mmaEvents } from "@/db/schema";
 
@@ -44,6 +44,8 @@ export async function GET(req: NextRequest) {
     .where(
       and(
         isNotNull(fighters.weightClass),
+        sql`${fighters.fullName} !~ '^Fighter [0-9]+$'`,
+        sql`(${fighters.careerWins} + ${fighters.careerLosses} + ${fighters.careerDraws}) > 0`,
         or(
           ilike(fighters.fullName, pattern),
           ilike(fighters.fullNameKo, pattern),
