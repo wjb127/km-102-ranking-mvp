@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -333,6 +334,7 @@ export default function FightersPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sort, setSort] = useState<SortValue>("wins");
   const [weight, setWeight] = useState<string>("");
+  const [nationality, setNationality] = useState<string>("");
   const [activeOnly, setActiveOnly] = useState(true);
   const [compareFighters, setCompareFighters] = useState<DbFighter[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -356,6 +358,7 @@ export default function FightersPage() {
     });
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (weight) params.set("weight", weight);
+    if (nationality) params.set("nationality", nationality);
     if (activeOnly) params.set("active", "1");
     // KO/SUB/Dec 집계 컬럼 표시용 (fighter_org_records 채워졌을 때 노출)
     params.set("includeOrgTotals", "1");
@@ -367,6 +370,13 @@ export default function FightersPage() {
     data: DbFighter[];
     total: number;
   }>(getKey, fetcher, { revalidateOnFocus: false, revalidateFirstPage: false });
+
+  // 국적 목록 (드롭다운 필터용) — 상위 100건 노출, 나머지는 그룹 처리
+  const { data: nationalityData } = useSWR<{
+    success: boolean;
+    data: { value: string; label: string; count: number }[];
+  }>("/api/mma-fighters/nationalities", fetcher, { revalidateOnFocus: false });
+  const nationalityOptions = nationalityData?.data ?? [];
 
   const fighters = data ? data.flatMap((page) => page.data) : [];
   const total = data?.[0]?.total ?? 0;
@@ -515,6 +525,19 @@ export default function FightersPage() {
             </optgroup>
           </select>
 
+          <select
+            value={nationality}
+            onChange={(e) => setNationality(e.target.value)}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer max-w-[160px]"
+          >
+            <option value="">전체 국적</option>
+            {nationalityOptions.map((n) => (
+              <option key={n.value} value={n.value}>
+                {n.label} ({n.count})
+              </option>
+            ))}
+          </select>
+
           <label
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium cursor-pointer transition-colors",
@@ -532,11 +555,12 @@ export default function FightersPage() {
             <span>{activeOnly ? "✓ " : ""}현역만</span>
           </label>
 
-          {(weight || !activeOnly || sort !== "wins") && (
+          {(weight || nationality || !activeOnly || sort !== "wins") && (
             <button
               onClick={() => {
                 setSort("wins");
                 setWeight("");
+                setNationality("");
                 setActiveOnly(true);
               }}
               className="ml-auto text-xs text-muted hover:text-foreground underline-offset-2 hover:underline transition-colors"

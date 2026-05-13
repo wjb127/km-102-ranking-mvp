@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("search") ?? "").trim();
   const weight = (searchParams.get("weight") ?? "").trim();
+  const nationality = (searchParams.get("nationality") ?? "").trim();
   const sort = (searchParams.get("sort") ?? "name").trim();
   const activeOnly = searchParams.get("active") === "1";
   const verifiedOnly = searchParams.get("verified") === "1";
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
     if (searchCond) conditions.push(searchCond);
   }
   if (weight) conditions.push(eq(fighters.weightClass, weight));
+  if (nationality) conditions.push(eq(fighters.nationality, nationality));
   if (activeOnly) conditions.push(eq(fighters.isActive, true));
   if (verifiedOnly) conditions.push(isNotNull(fighters.externalId));
   if (minWins !== null) conditions.push(gte(fighters.careerWins, minWins));
