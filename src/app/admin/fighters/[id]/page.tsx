@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ShieldAlert, Save } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, ShieldAlert, Save, Upload } from "lucide-react";
 
 interface Fighter {
   id: number;
@@ -64,6 +65,8 @@ export default function AdminFighterDetailPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!fighterId) return;
@@ -147,6 +150,52 @@ export default function AdminFighterDetailPage() {
   const currentValue = (k: EditableKey): string =>
     patch[k] ?? (fighter[k] ?? "");
 
+  async function onUploadImage(file: File) {
+    setUploadError(null);
+    if (!file.type.startsWith("image/")) {
+      setUploadError("이미지 파일만 업로드 가능합니다.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError("10MB 이하 파일만 업로드 가능합니다.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const sigRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const sigJson = await sigRes.json();
+      if (!sigRes.ok || !sigJson.success) {
+        setUploadError(sigJson.error ?? "서명 발급 실패");
+        return;
+      }
+      const { cloudName, apiKey, timestamp, signature, folder, uploadUrl } = sigJson.data;
+
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("api_key", apiKey);
+      fd.append("timestamp", String(timestamp));
+      fd.append("signature", signature);
+      fd.append("folder", folder);
+
+      const cloudRes = await fetch(uploadUrl ?? `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "POST",
+        body: fd,
+      });
+      const cloudJson = await cloudRes.json();
+      if (!cloudRes.ok || !cloudJson.secure_url) {
+        setUploadError(cloudJson.error?.message ?? "Cloudinary 업로드 실패");
+        return;
+      }
+      setPatch((p) => ({ ...p, imageUrl: cloudJson.secure_url as string }));
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-16 md:pt-20 pb-24 md:pb-12 px-4">
       <div className="max-w-3xl mx-auto">
@@ -192,6 +241,59 @@ export default function AdminFighterDetailPage() {
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 resize-none"
                 />
+              ) : k === "imageUrl" ? (
+                <div className="space-y-2">
+                  {currentValue(k) && (
+                    <div className="relative w-24 h-24 overflow-hidden rounded border border-gray-300 bg-gray-100">
+                      <Image
+                        src={currentValue(k)}
+                        alt="현재 이미지"
+                        fill
+                        sizes="96px"
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold rounded cursor-pointer">
+                      <Upload className="w-3.5 h-3.5" />
+                      {uploading ? "업로드 중..." : "파일 선택 (10MB 이하)"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploading}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) onUploadImage(file);
+                          e.target.value = "";
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    {currentValue(k) && (
+                      <button
+                        type="button"
+                        onClick={() => setPatch((p) => ({ ...p, imageUrl: "" }))}
+                        className="text-xs text-red-600 hover:text-red-800"
+                      >
+                        제거
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={currentValue(k)}
+                    onChange={(e) =>
+                      setPatch((p) => ({ ...p, [k]: e.target.value }))
+                    }
+                    placeholder="또는 이미지 URL 직접 입력"
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-xs text-gray-600 focus:outline-none focus:border-blue-500"
+                  />
+                  {uploadError && (
+                    <div className="text-xs text-red-600">{uploadError}</div>
+                  )}
+                </div>
               ) : (
                 <input
                   type="text"
