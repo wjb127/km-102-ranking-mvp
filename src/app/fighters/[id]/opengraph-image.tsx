@@ -1,12 +1,15 @@
 import { ImageResponse } from "next/og";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters } from "@/db/schema";
+import { publicFighterCondition } from "@/lib/fighter-visibility";
 
 export const runtime = "nodejs";
 export const alt = "MMA 선수 프로필";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+// OG 이미지는 자주 안 바뀌므로 1시간 캐시 (크롤러 재요청 부하 감소)
+export const revalidate = 3600;
 
 const FLAG: Record<string, string> = {
   USA: "🇺🇸",
@@ -62,7 +65,7 @@ export default async function Image({ params }: Props) {
       imageUrl: fighters.imageUrl,
     })
     .from(fighters)
-    .where(eq(fighters.id, numericId))
+    .where(and(eq(fighters.id, numericId), publicFighterCondition()))
     .limit(1);
 
   if (!row) return defaultImage();

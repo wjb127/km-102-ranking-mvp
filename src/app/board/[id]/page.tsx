@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { boardPosts } from "@/db/schema";
 import { SITE_URL } from "@/lib/site";
@@ -59,6 +59,6 @@ export async function generateMetadata({ params }: BoardPageProps): Promise<Meta
   };
 }
 
-export default function BoardPage(_: BoardPageProps) {
+export default function BoardPage() {
   return <BoardDetailClient />;
 }

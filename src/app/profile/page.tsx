@@ -107,22 +107,33 @@ export default function ProfilePage() {
 
   useEffect(() => {
     (async () => {
-      const p = await loadProfile();
-      if (p) {
-        // 내 글/댓글/북마크 병렬 조회
-        const [postsRes, commentsRes, bookmarksRes] = await Promise.all([
-          fetch("/api/profile/posts?limit=10", { cache: "no-store" }),
-          fetch("/api/profile/comments?limit=10", { cache: "no-store" }),
-          fetch("/api/fighter-bookmarks", { cache: "no-store" }),
+      try {
+        const p = await loadProfile();
+        if (!p) return;
+
+        // 각 요청 독립 처리 — 한 곳이 실패해도 나머지 섹션은 표시되도록
+        const safeFetch = async <T,>(url: string): Promise<T | null> => {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (!res.ok) return null;
+            const json = await res.json();
+            return json?.success ? (json.data as T) : null;
+          } catch {
+            return null;
+          }
+        };
+
+        const [posts, comments, bookmarksData] = await Promise.all([
+          safeFetch<MyPost[]>("/api/profile/posts?limit=10"),
+          safeFetch<MyComment[]>("/api/profile/comments?limit=10"),
+          safeFetch<MyBookmark[]>("/api/fighter-bookmarks"),
         ]);
-        const postsJson = await postsRes.json();
-        const commentsJson = await commentsRes.json();
-        const bookmarksJson = await bookmarksRes.json();
-        if (postsJson?.success) setMyPosts(postsJson.data);
-        if (commentsJson?.success) setMyComments(commentsJson.data);
-        if (bookmarksJson?.success) setBookmarks(bookmarksJson.data);
+        if (posts) setMyPosts(posts);
+        if (comments) setMyComments(comments);
+        if (bookmarksData) setBookmarks(bookmarksData);
+      } finally {
+        setLoaded(true);
       }
-      setLoaded(true);
     })();
   }, [loadProfile]);
 

@@ -7,6 +7,8 @@ export const runtime = "nodejs";
 export const alt = "MMA 이벤트";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+// OG 이미지는 자주 안 바뀌므로 1시간 캐시
+export const revalidate = 3600;
 
 interface Props {
   params: Promise<{ id: string }>;

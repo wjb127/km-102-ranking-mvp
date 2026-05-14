@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { alias } from "drizzle-orm/pg-core";
-import { desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters, fighterOrgRecords, organizations, fights, mmaEvents } from "@/db/schema";
+import { publicFighterCondition } from "@/lib/fighter-visibility";
 
 // ── GET /api/mma-fighters/[id] : 선수 상세 + 단체별 전적 + 최근 경기 ──
 export async function GET(
@@ -18,7 +19,7 @@ export async function GET(
   const [fighterRow] = await db
     .select()
     .from(fighters)
-    .where(eq(fighters.id, fighterId))
+    .where(and(eq(fighters.id, fighterId), publicFighterCondition()))
     .limit(1);
 
   if (!fighterRow) {

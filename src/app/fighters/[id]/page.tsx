@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters } from "@/db/schema";
 import { SITE_URL } from "@/lib/site";
+import { publicFighterCondition } from "@/lib/fighter-visibility";
 import FighterDetailClient from "./fighter-detail-client";
 
 interface FighterPageProps {
@@ -28,10 +29,13 @@ export async function generateMetadata({ params }: FighterPageProps): Promise<Me
       imageUrl: fighters.imageUrl,
     })
     .from(fighters)
-    .where(eq(fighters.id, numericId))
+    .where(and(eq(fighters.id, numericId), publicFighterCondition()))
     .limit(1);
 
-  if (!row) return {};
+  if (!row) {
+    // placeholder / 비공개 선수는 검색 엔진에서 제외
+    return { robots: { index: false, follow: false } };
+  }
 
   const displayName = row.fullNameKo
     ? `${row.fullNameKo} (${row.fullName})`
