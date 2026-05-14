@@ -268,12 +268,25 @@ function FighterRow({
           : "border-border hover:border-primary/40"
       )}
     >
-      <span
-        className="text-xl leading-none shrink-0"
-        aria-label={fighter.nationality ?? "국적"}
-      >
-        {getFlag(fighter.nationality)}
-      </span>
+      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-background sm:h-11 sm:w-11">
+        {fighter.imageUrl ? (
+          <Image
+            src={fighter.imageUrl}
+            alt={primaryName(fighter.fullNameKo, fighter.fullName)}
+            fill
+            sizes="44px"
+            className="object-cover"
+            unoptimized
+          />
+        ) : (
+          <span
+            className="text-xl leading-none"
+            aria-label={fighter.nationality ?? "국적"}
+          >
+            {getFlag(fighter.nationality)}
+          </span>
+        )}
+      </div>
 
       <Link
         href={`/fighters/${fighter.id}`}
