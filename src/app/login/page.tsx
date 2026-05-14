@@ -86,11 +86,6 @@ export default function LoginPage() {
             회원가입
           </Link>
         </div>
-
-        <div className="mt-6 border-t border-border pt-4 text-[11px] text-muted leading-relaxed">
-          <div className="font-semibold text-foreground/70 mb-1">테스트 계정</div>
-          <div>admin@example.com / admin123!</div>
-        </div>
       </div>
     </div>
   );
