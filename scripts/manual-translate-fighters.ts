@@ -116,6 +116,7 @@ const NAME_MAP: Record<string, string> = {
   "Brian Ortega": "브라이언 오르테가",
   "Korean Zombie": "코리안 좀비",
   "Chan Sung Jung": "정찬성",
+  "Chan Samart": "찬 사마트",
 
   // ── 여성 ──
   "Ronda Rousey": "론다 로우지",
@@ -304,7 +305,6 @@ const NAME_MAP: Record<string, string> = {
   "Steven Siler": "스티븐 사일러",
   "Denis Kang": "데니스 강",
   "Sanae Kikuta": "사나에 키쿠타",
-
   // ── 마달레나 vs 프레이츠 (피드백) ──
   // 정확한 영문명 미상 — 탐색 후 확정 필요. 임시 후보:
   "Maddalena Quaglia": "마달레나 콸리아",
