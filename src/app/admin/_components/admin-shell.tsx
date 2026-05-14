@@ -69,7 +69,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   const isDashboardRoute = pathname === "/admin";
-  const currentTab = (searchParams?.get("tab") as DashboardTab | null) ?? "dashboard";
+  const rawTab = searchParams?.get("tab") ?? "dashboard";
+  const validTabKeys = DASHBOARD_TABS.map((t) => t.key) as string[];
+  // 알 수 없는 tab 파라미터는 dashboard 로 fallback 해서 사이드바 active 표시 유지
+  const currentTab: DashboardTab = validTabKeys.includes(rawTab) ? (rawTab as DashboardTab) : "dashboard";
 
   function tabHref(key: DashboardTab) {
     return key === "dashboard" ? "/admin" : `/admin?tab=${key}`;

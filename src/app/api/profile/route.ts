@@ -194,10 +194,23 @@ export async function DELETE() {
     );
   }
 
-  await db
+  // TOCTOU 방지 — 세션 체크 직후 role 이 admin 으로 승격되면 위 가드를 통과한 뒤라도
+  // UPDATE WHERE 절에서 role <> 'admin' 조건을 다시 걸어 원자적으로 차단.
+  const deleted = await db
     .update(users)
     .set({ deletedAt: new Date(), updatedAt: new Date() })
-    .where(eq(users.id, session!.sub));
+    .where(and(eq(users.id, session!.sub), ne(users.role, "admin")))
+    .returning({ id: users.id });
+
+  if (deleted.length === 0) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "관리자 계정은 탈퇴할 수 없습니다. 다른 관리자에게 권한 변경을 요청해주세요.",
+      },
+      { status: 403 }
+    );
+  }
 
   // 세션 쿠키 삭제
   await clearSessionCookie();
