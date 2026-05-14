@@ -69,12 +69,13 @@ export async function POST(req: NextRequest) {
       ? [body.fighterId]
       : [];
 
-  // 정수화 + 중복 제거 + 최대 개수 제한
+  // 정수화 + 중복 제거 + Postgres int4 상한 차단 + 최대 개수 제한
+  const PG_INT4_MAX = 2_147_483_647;
   const dedupe = Array.from(
     new Set(
       rawIds
         .map((v) => Number(v))
-        .filter((v) => Number.isInteger(v) && v > 0)
+        .filter((v) => Number.isSafeInteger(v) && v > 0 && v <= PG_INT4_MAX)
     )
   );
 
