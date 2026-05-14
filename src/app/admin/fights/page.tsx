@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Search, Swords, Crown, Ban } from "lucide-react";
+import AdminShell from "@/components/admin-shell";
 
 interface FightRow {
   id: number;
@@ -85,7 +86,7 @@ export default function AdminFightsPage() {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-4 py-6 md:px-8 md:py-8">
+    <AdminShell>
       <div className="mx-auto max-w-6xl space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -246,6 +247,6 @@ export default function AdminFightsPage() {
           </div>
         )}
       </div>
-    </div>
+    </AdminShell>
   );
 }

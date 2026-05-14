@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ShieldAlert, Save } from "lucide-react";
+import AdminShell from "@/components/admin-shell";
 
 interface FightDetail {
   id: number;
@@ -150,7 +151,7 @@ export default function AdminFightEditPage() {
 
   if (errorMsg || !fight) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-4">
+      <AdminShell>
         <div className="rounded-xl border border-[var(--danger)]/40 bg-[var(--danger)]/5 p-6 text-center">
           <p className="text-sm text-[var(--danger)]">{errorMsg ?? "경기를 찾을 수 없습니다."}</p>
           <Link
@@ -160,7 +161,7 @@ export default function AdminFightEditPage() {
             목록으로
           </Link>
         </div>
-      </div>
+      </AdminShell>
     );
   }
 
@@ -168,7 +169,7 @@ export default function AdminFightEditPage() {
   const bName = fight.fighterB?.nameKo || fight.fighterB?.name || "선수 B";
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-4 py-6 md:px-8 md:py-8">
+    <AdminShell>
       <div className="mx-auto max-w-2xl space-y-5">
         <div>
           <Link
@@ -306,6 +307,6 @@ export default function AdminFightEditPage() {
           </button>
         </div>
       </div>
-    </div>
+    </AdminShell>
   );
 }

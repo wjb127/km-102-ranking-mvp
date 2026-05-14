@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, ShieldAlert } from "lucide-react";
+import AdminShell from "@/components/admin-shell";
 
 interface FighterRow {
   id: number;
@@ -60,7 +61,7 @@ export default function AdminFightersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 md:pt-20 pb-24 md:pb-12 px-4">
+    <AdminShell>
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -120,6 +121,6 @@ export default function AdminFightersPage() {
           )}
         </div>
       </div>
-    </div>
+    </AdminShell>
   );
 }

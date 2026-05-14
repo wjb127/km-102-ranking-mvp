@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ShieldAlert, Save, Upload } from "lucide-react";
+import AdminShell from "@/components/admin-shell";
 
 interface Fighter {
   id: number;
@@ -198,7 +199,7 @@ export default function AdminFighterDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 md:pt-20 pb-24 md:pb-12 px-4">
+    <AdminShell>
       <div className="max-w-3xl mx-auto">
         <Link
           href="/admin/fighters"
@@ -343,7 +344,7 @@ export default function AdminFighterDetailPage() {
           </div>
         </form>
       </div>
-    </div>
+    </AdminShell>
   );
 }
 

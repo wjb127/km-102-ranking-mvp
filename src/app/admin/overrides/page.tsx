@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ShieldAlert, Clock } from "lucide-react";
+import AdminShell from "@/components/admin-shell";
 
 interface OverrideRow {
   id: number;
@@ -58,7 +59,7 @@ export default function AdminOverridesPage() {
   const openRow = rows.find((r) => r.id === openId);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 md:pt-20 pb-24 md:pb-12 px-4">
+    <AdminShell>
       <div className="max-w-4xl mx-auto">
         <Link
           href="/admin/fighters"
@@ -143,6 +144,6 @@ export default function AdminOverridesPage() {
           </div>
         )}
       </div>
-    </div>
+    </AdminShell>
   );
 }
