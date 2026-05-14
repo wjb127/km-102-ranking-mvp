@@ -13,6 +13,7 @@
     "translate:batch": "tsx scripts/translate-batch.ts",
     "audit:fighter-duplicates": "tsx scripts/audit-fighter-duplicates.ts",
     "audit:event-duplicates": "tsx scripts/audit-event-duplicates.ts",
+    "alias:event": "tsx scripts/upsert-event-alias.ts",
     "verify:fighter-duplicates": "tsx scripts/verify-duplicate-fighters.ts",
     "merge:fighter-duplicates": "tsx scripts/merge-duplicate-fighters.ts"
   },
