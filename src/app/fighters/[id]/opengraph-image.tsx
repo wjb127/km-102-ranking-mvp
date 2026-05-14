@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters } from "@/db/schema";
 import { publicFighterCondition } from "@/lib/fighter-visibility";
+import { parsePositiveIntParam } from "@/lib/parse-id";
 
 export const runtime = "nodejs";
 export const alt = "MMA 선수 프로필";
@@ -47,8 +48,8 @@ interface Props {
 
 export default async function Image({ params }: Props) {
   const { id } = await params;
-  const numericId = Number(id);
-  if (!Number.isFinite(numericId)) return defaultImage();
+  const numericId = parsePositiveIntParam(id);
+  if (numericId === null) return defaultImage();
 
   const [row] = await db
     .select({

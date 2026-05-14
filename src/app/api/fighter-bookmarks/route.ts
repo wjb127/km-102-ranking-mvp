@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { fighterBookmarks, fighters } from "@/db/schema";
 import { requireSession } from "@/lib/auth/guard";
 import { publicFighterCondition } from "@/lib/fighter-visibility";
+import { parsePositiveIntParam } from "@/lib/parse-id";
 
 // ── GET /api/fighter-bookmarks ──
 // 내가 북마크한 선수 목록 (최신순). 프로필 페이지에서 사용.
@@ -32,7 +33,13 @@ export async function GET() {
     })
     .from(fighterBookmarks)
     .innerJoin(fighters, eq(fighters.id, fighterBookmarks.fighterId))
-    .where(eq(fighterBookmarks.userId, session!.sub))
+    .where(
+      and(
+        eq(fighterBookmarks.userId, session!.sub),
+        // 저장 후 비공개/placeholder 상태로 바뀐 선수는 노출 차단
+        publicFighterCondition()
+      )
+    )
     .orderBy(desc(fighterBookmarks.createdAt))
     .limit(200);
 
@@ -124,8 +131,8 @@ export async function DELETE(req: NextRequest) {
   if (response) return response;
 
   const url = new URL(req.url);
-  const fighterId = Number(url.searchParams.get("fighterId"));
-  if (!Number.isInteger(fighterId) || fighterId <= 0) {
+  const fighterId = parsePositiveIntParam(url.searchParams.get("fighterId"));
+  if (fighterId === null) {
     return NextResponse.json(
       { success: false, error: "fighterId가 필요합니다." },
       { status: 400 }

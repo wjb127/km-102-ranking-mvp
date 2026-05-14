@@ -3,6 +3,8 @@ import { and, asc, desc, eq, gte, ilike, inArray, isNotNull, or, sql } from "dri
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters, fighterOrgRecords } from "@/db/schema";
+import { getCurrentSession } from "@/lib/auth/session";
+import { publicFighterCondition } from "@/lib/fighter-visibility";
 
 // ── GET /api/mma-fighters?search=...&weight=...&sort=...&active=...&verified=...&minWins=... ──
 // career_wins 등은 balldontlie 원본을 그대로 저장. fighter_org_records 는
@@ -19,17 +21,22 @@ export async function GET(req: NextRequest) {
   const minWinsRaw = Number(searchParams.get("minWins") ?? NaN);
   const minWins = Number.isFinite(minWinsRaw) && minWinsRaw >= 0 ? minWinsRaw : null;
   const includeOrgTotals = searchParams.get("includeOrgTotals") === "1";
-  // 외부 API 결측치(체급 없음) 행 공개 노출 차단. 관리자/admin은 includeIncomplete=1로 우회
-  const includeIncomplete = searchParams.get("includeIncomplete") === "1";
+  // 외부 API 결측치(체급 없음) 행 공개 노출 차단. admin 세션만 includeIncomplete=1로 우회 가능.
+  const includeIncompleteRequested = searchParams.get("includeIncomplete") === "1";
+  let includeIncomplete = false;
+  if (includeIncompleteRequested) {
+    const adminSession = await getCurrentSession();
+    if (adminSession?.role === "admin") {
+      includeIncomplete = true;
+    }
+  }
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10) || 50, 1000);
   const offset = Math.max(parseInt(searchParams.get("offset") ?? "0", 10) || 0, 0);
 
   const conditions: SQL[] = [];
   if (!includeIncomplete) {
-    // 체급 결측 + placeholder 이름("Fighter 12345") + 전적 0-0-0 행 공개 차단
-    conditions.push(isNotNull(fighters.weightClass));
-    conditions.push(sql`${fighters.fullName} !~ '^Fighter [0-9]+$'`);
-    conditions.push(sql`(${fighters.careerWins} + ${fighters.careerLosses} + ${fighters.careerDraws}) > 0`);
+    // 공개 노출 가능한 선수만 (placeholder/0-0-0/체급 결측 제외)
+    conditions.push(publicFighterCondition());
   }
   if (q) {
     const searchCond = or(

@@ -3,6 +3,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { mmaEvents, organizations, fighters, fights } from "@/db/schema";
+import { parsePositiveIntParam } from "@/lib/parse-id";
 
 // ── GET /api/mma-events/[id] : 이벤트 상세 + 파이트 카드 ──
 export async function GET(
@@ -10,8 +11,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const eventId = parseInt(id, 10);
-  if (isNaN(eventId)) {
+  const eventId = parsePositiveIntParam(id);
+  if (eventId === null) {
     return NextResponse.json({ success: false, error: "잘못된 id." }, { status: 400 });
   }
 

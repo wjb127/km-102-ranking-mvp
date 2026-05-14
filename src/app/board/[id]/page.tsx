@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { boardPosts } from "@/db/schema";
 import { SITE_URL } from "@/lib/site";
+import { parsePositiveIntParam } from "@/lib/parse-id";
 import BoardDetailClient from "./board-detail-client";
 
 interface BoardPageProps {
@@ -17,8 +18,8 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 export async function generateMetadata({ params }: BoardPageProps): Promise<Metadata> {
   const { id } = await params;
-  const numericId = Number(id);
-  if (!Number.isFinite(numericId)) return {};
+  const numericId = parsePositiveIntParam(id);
+  if (numericId === null) return { robots: { index: false, follow: false } };
 
   const [row] = await db
     .select({

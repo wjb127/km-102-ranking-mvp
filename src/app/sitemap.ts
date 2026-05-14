@@ -30,10 +30,18 @@ export async function generateSitemaps(): Promise<{ id: number }[]> {
   return ids;
 }
 
-export default async function sitemap({ id }: { id: number }): Promise<MetadataRoute.Sitemap> {
+// Next 16 generateSitemaps 핸들러는 빌드/런타임 구현에 따라 id가 number 또는 Promise<number>로 도달.
+// 안전하게 await 후 정수 검증 — 깨진 NaN offset/잘못된 shard 분기 방지.
+export default async function sitemap(
+  { id }: { id: number | Promise<number> }
+): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const shardId = Number(await Promise.resolve(id));
+  if (!Number.isInteger(shardId) || shardId < 0) {
+    return [];
+  }
 
-  if (id === 0) {
+  if (shardId === 0) {
     const staticEntries: MetadataRoute.Sitemap = [
       { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
       { url: `${SITE_URL}/fighters`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
@@ -73,7 +81,7 @@ export default async function sitemap({ id }: { id: number }): Promise<MetadataR
   }
 
   // 선수 분할 (id 1부터 시작)
-  const offset = (id - 1) * CHUNK_SIZE;
+  const offset = (shardId - 1) * CHUNK_SIZE;
   const fighterRows = await db
     .select({
       id: fighters.id,

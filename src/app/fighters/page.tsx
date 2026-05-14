@@ -371,11 +371,12 @@ export default function FightersPage() {
     total: number;
   }>(getKey, fetcher, { revalidateOnFocus: false, revalidateFirstPage: false });
 
-  // 국적 목록 (드롭다운 필터용) — 상위 100건 노출, 나머지는 그룹 처리
+  // 국적 목록 (드롭다운 필터용) — 현역 토글 상태와 동일한 count 기준으로 집계
+  const nationalityKey = `/api/mma-fighters/nationalities${activeOnly ? "?active=1" : ""}`;
   const { data: nationalityData } = useSWR<{
     success: boolean;
     data: { value: string; label: string; count: number }[];
-  }>("/api/mma-fighters/nationalities", fetcher, { revalidateOnFocus: false });
+  }>(nationalityKey, fetcher, { revalidateOnFocus: false });
   const nationalityOptions = nationalityData?.data ?? [];
 
   const fighters = data ? data.flatMap((page) => page.data) : [];

@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { mmaEvents } from "@/db/schema";
+import { parsePositiveIntParam } from "@/lib/parse-id";
 
 export const runtime = "nodejs";
 export const alt = "MMA 이벤트";
@@ -16,8 +17,8 @@ interface Props {
 
 export default async function Image({ params }: Props) {
   const { id } = await params;
-  const numericId = Number(id);
-  if (!Number.isFinite(numericId)) return fallback();
+  const numericId = parsePositiveIntParam(id);
+  if (numericId === null) return fallback();
 
   const [row] = await db
     .select({

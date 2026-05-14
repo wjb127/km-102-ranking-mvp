@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { fighters } from "@/db/schema";
 import { SITE_URL } from "@/lib/site";
 import { publicFighterCondition } from "@/lib/fighter-visibility";
+import { parsePositiveIntParam } from "@/lib/parse-id";
 import FighterDetailClient from "./fighter-detail-client";
 
 interface FighterPageProps {
@@ -12,8 +13,8 @@ interface FighterPageProps {
 
 export async function generateMetadata({ params }: FighterPageProps): Promise<Metadata> {
   const { id } = await params;
-  const numericId = Number(id);
-  if (!Number.isFinite(numericId)) return {};
+  const numericId = parsePositiveIntParam(id);
+  if (numericId === null) return { robots: { index: false, follow: false } };
 
   const [row] = await db
     .select({

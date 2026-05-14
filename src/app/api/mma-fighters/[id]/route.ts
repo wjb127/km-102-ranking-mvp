@@ -4,6 +4,7 @@ import { and, desc, eq, or } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters, fighterOrgRecords, organizations, fights, mmaEvents } from "@/db/schema";
 import { publicFighterCondition } from "@/lib/fighter-visibility";
+import { parsePositiveIntParam } from "@/lib/parse-id";
 
 // ── GET /api/mma-fighters/[id] : 선수 상세 + 단체별 전적 + 최근 경기 ──
 export async function GET(
@@ -11,8 +12,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const fighterId = parseInt(id, 10);
-  if (isNaN(fighterId)) {
+  const fighterId = parsePositiveIntParam(id);
+  if (fighterId === null) {
     return NextResponse.json({ success: false, error: "잘못된 id." }, { status: 400 });
   }
 
