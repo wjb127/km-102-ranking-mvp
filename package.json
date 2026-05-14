@@ -10,7 +10,10 @@
     "sync:mma": "tsx scripts/sync-balldontlie.ts",
     "sync:mma:fights": "tsx scripts/sync-balldontlie.ts --fights",
     "crawl:ufcstats": "tsx scripts/crawl-ufcstats.ts",
-    "translate:batch": "tsx scripts/translate-batch.ts"
+    "translate:batch": "tsx scripts/translate-batch.ts",
+    "audit:fighter-duplicates": "tsx scripts/audit-fighter-duplicates.ts",
+    "verify:fighter-duplicates": "tsx scripts/verify-duplicate-fighters.ts",
+    "merge:fighter-duplicates": "tsx scripts/merge-duplicate-fighters.ts"
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.1.0",

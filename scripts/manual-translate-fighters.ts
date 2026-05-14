@@ -116,6 +116,7 @@ const NAME_MAP: Record<string, string> = {
   "Brian Ortega": "브라이언 오르테가",
   "Korean Zombie": "코리안 좀비",
   "Chan Sung Jung": "정찬성",
+  // LLM 음차가 Chan Samart를 정찬성으로 잘못 붙인 적이 있어 수기 고정한다.
   "Chan Samart": "찬 사마트",
 
   // ── 여성 ──

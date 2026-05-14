@@ -15,6 +15,14 @@ import {
 const BASE_URL = "https://api.balldontlie.io/mma/v1";
 export const RATE_LIMIT_MS = 13_000;
 
+// 검증 후 병합한 balldontlie 중복 external_id.
+// fights 동기화에서 retired external_id가 다시 들어오면 삭제된 row를 재생성하지 않고 keeper id를 쓴다.
+// 10건 이상 늘어나면 코드 상수 대신 DB alias 테이블로 이전한다.
+const RETIRED_FIGHTER_EXTERNAL_ID_ALIASES = new Map<number, number>([
+  [32349, 14900], // Bruno Da Silva -> Bruno da Silva
+  [40425, 13935], // Dustin West -> dustin west
+]);
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -256,6 +264,23 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
 
   async function upsertFighter(fighter: BDLFighter): Promise<number> {
     if (fighterCache.has(fighter.id)) return fighterCache.get(fighter.id)!;
+
+    const keeperId = RETIRED_FIGHTER_EXTERNAL_ID_ALIASES.get(fighter.id);
+    if (keeperId) {
+      const [keeper] = await db
+        .select({ id: fighters.id })
+        .from(fighters)
+        .where(eq(fighters.id, keeperId))
+        .limit(1);
+      if (!keeper) {
+        throw new Error(
+          `[fighters] retired external_id=${fighter.id}의 keeper fighter_id=${keeperId}를 찾지 못했습니다.`
+        );
+      }
+      fighterCache.set(fighter.id, keeper.id);
+      log(`[fighters] SKIP retired external_id=${fighter.id} -> fighter_id=${keeper.id}`);
+      return keeper.id;
+    }
 
     const values = buildFighterValues(fighter);
     // ⚠ updatePayload에는 fullNameKo/nicknameKo/nationalityKo/weightClassKo/bioKo 등

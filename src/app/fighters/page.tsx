@@ -477,10 +477,12 @@ export default function FightersPage() {
 
   // localStorage 에서 view 모드 복원 (최초 1회)
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? window.localStorage.getItem("fighters-view") : null;
-    if (saved !== "card" && saved !== "list") return;
-    const timer = window.setTimeout(() => setView(saved), 0);
-    return () => window.clearTimeout(timer);
+    const saved = window.localStorage.getItem("fighters-view");
+    if (saved === "card" || saved === "list") {
+      // 저장된 사용자 보기 설정을 첫 클라이언트 렌더 직후 복원한다.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setView(saved);
+    }
   }, []);
 
   // view 변경 시 localStorage 저장
