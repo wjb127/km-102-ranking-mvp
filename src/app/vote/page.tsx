@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
@@ -22,6 +23,7 @@ interface FighterVote {
   id: string;
   fighterId: number;
   name: string;
+  imageUrl: string | null;
   voteCount: number;
   voted: boolean;
 }
@@ -474,6 +476,19 @@ export default function VotePage() {
                       >
                         {rank}
                       </div>
+
+                      {fighter.imageUrl && (
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border bg-background">
+                          <Image
+                            src={fighter.imageUrl}
+                            alt={fighter.name}
+                            fill
+                            sizes="48px"
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      )}
 
                       {/* 선수 정보 */}
                       <div className="flex-1 min-w-0">

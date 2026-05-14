@@ -3,6 +3,7 @@
 import { use, useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -462,24 +463,40 @@ function FighterDetailClient({ id }: { id: string }) {
                 transition={{ duration: 0.5, ease: "easeOut" as const }}
                 className="mb-6"
               >
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="text-3xl" aria-label={fighter.nationality ?? "국적"}>
-                    {getFlag(fighter.nationality)}
-                  </span>
-                  <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">
-                    {displayName}
-                  </h1>
+                <div className="flex items-center gap-4 mb-1">
+                  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+                    {fighter.imageUrl ? (
+                      <Image
+                        src={fighter.imageUrl}
+                        alt={displayName}
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                        priority
+                        unoptimized
+                      />
+                    ) : (
+                      <span className="text-4xl" aria-label={fighter.nationality ?? "국적"}>
+                        {getFlag(fighter.nationality)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h1 className="text-2xl md:text-3xl font-extrabold text-foreground">
+                      {displayName}
+                    </h1>
+                    {subName && (
+                      <p className="text-xs text-muted/70 mt-1">
+                        {subName}
+                      </p>
+                    )}
+                    {nick && (
+                      <p className="text-muted text-base md:text-lg font-medium mt-0.5">
+                        &quot;{nick}&quot;
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {subName && (
-                  <p className="text-xs text-muted/70 ml-[calc(1.875rem+0.75rem)]">
-                    {subName}
-                  </p>
-                )}
-                {nick && (
-                  <p className="text-muted text-base md:text-lg font-medium ml-[calc(1.875rem+0.75rem)] mt-0.5">
-                    &quot;{nick}&quot;
-                  </p>
-                )}
               </motion.div>
 
               {/* 전적 통계 (합산) */}

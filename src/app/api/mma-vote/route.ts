@@ -28,6 +28,7 @@ interface VoteCandidate {
   id: string;
   fighterId: number;
   name: string;
+  imageUrl: string | null;
   voteCount: number;
   voted: boolean;
 }
@@ -106,6 +107,7 @@ async function loadCategoryCandidates(category: CategorySlug) {
         fighterId: fightersTbl.id,
         fullName: fightersTbl.fullName,
         fullNameKo: fightersTbl.fullNameKo,
+        imageUrl: fightersTbl.imageUrl,
         wins: fightersTbl.careerWins,
       })
       .from(fightersTbl)
@@ -120,6 +122,7 @@ async function loadCategoryCandidates(category: CategorySlug) {
         fighterId: fightersTbl.id,
         fullName: fightersTbl.fullName,
         fullNameKo: fightersTbl.fullNameKo,
+        imageUrl: fightersTbl.imageUrl,
         wins: fightersTbl.careerWins,
       })
       .from(fightersTbl)
@@ -140,6 +143,7 @@ async function loadCategoryCandidates(category: CategorySlug) {
         fighterId: fightersTbl.id,
         fullName: fightersTbl.fullName,
         fullNameKo: fightersTbl.fullNameKo,
+        imageUrl: fightersTbl.imageUrl,
         wins: fightersTbl.careerWins,
       })
       .from(fightersTbl)
@@ -160,6 +164,7 @@ async function loadCategoryCandidates(category: CategorySlug) {
         fighterId: fightersTbl.id,
         fullName: fightersTbl.fullName,
         fullNameKo: fightersTbl.fullNameKo,
+        imageUrl: fightersTbl.imageUrl,
         wins: fightersTbl.careerWins,
         winsByKo: totals.winsByKo,
       })
@@ -179,6 +184,7 @@ async function loadCategoryCandidates(category: CategorySlug) {
       fighterId: fightersTbl.id,
       fullName: fightersTbl.fullName,
       fullNameKo: fightersTbl.fullNameKo,
+      imageUrl: fightersTbl.imageUrl,
       wins: fightersTbl.careerWins,
       winsBySub: totals.winsBySub,
     })
@@ -234,6 +240,7 @@ async function buildCategoryPayload(category: CategorySlug, fingerprint: string)
       id: String(row.fighterId),
       fighterId: row.fighterId,
       name: formatNameKoEn(row.fullNameKo, row.fullName),
+      imageUrl: row.imageUrl,
       voteCount: voteCounts.get(row.fighterId) ?? 0,
       voted: myVote === row.fighterId,
     }))
@@ -348,6 +355,7 @@ export async function POST(req: NextRequest) {
         id: String(candidate.fighterId),
         fighterId: candidate.fighterId,
         name: formatNameKoEn(candidate.fullNameKo, candidate.fullName),
+        imageUrl: candidate.imageUrl,
         voteCount: Number(count),
         voted,
       },

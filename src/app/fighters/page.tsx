@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import useSWRInfinite from "swr/infinite";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Search, Users, X, Loader2, SlidersHorizontal, GitCompareArrows } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -159,12 +160,22 @@ function FighterCard({
         <Link href={`/fighters/${fighter.id}`} className="block pr-9">
           {/* 상단: 국기 + 이름 + 닉네임 */}
           <div className="flex items-start gap-3 mb-3">
-            <span
-              className="text-2xl leading-none mt-0.5"
-              aria-label={fighter.nationality ?? "국적"}
-            >
-              {getFlag(fighter.nationality)}
-            </span>
+            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
+              {fighter.imageUrl ? (
+                <Image
+                  src={fighter.imageUrl}
+                  alt={displayName}
+                  fill
+                  sizes="48px"
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : (
+                <span className="text-2xl leading-none" aria-label={fighter.nationality ?? "국적"}>
+                  {getFlag(fighter.nationality)}
+                </span>
+              )}
+            </div>
             <div className="min-w-0 flex-1">
               <h3 className="font-bold text-foreground text-base leading-snug group-hover:text-primary transition-colors truncate">
                 {displayName}

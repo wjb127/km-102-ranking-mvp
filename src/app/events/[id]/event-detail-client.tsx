@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -118,22 +119,46 @@ function FightRow({ f }: { f: DbFightCard }) {
         <Link
           href={`/fighters/${f.fighterAId}`}
           className={cn(
-            "flex min-w-0 items-center justify-end gap-1.5 text-sm font-semibold hover:text-primary transition-colors",
+            "flex min-w-0 items-center justify-end gap-2 text-sm font-semibold hover:text-primary transition-colors",
             tagA === "W" ? "text-foreground" : finished ? "text-muted" : "text-foreground"
           )}
         >
           <span className="truncate">{aName}</span>
+          {f.fighterAImage && (
+            <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-background">
+              <Image
+                src={f.fighterAImage}
+                alt={aName}
+                fill
+                sizes="36px"
+                className="object-cover"
+                unoptimized
+              />
+            </span>
+          )}
           {finished && <ResultChip tag={tagA} />}
         </Link>
         <Swords className="w-3.5 h-3.5 text-muted/40" />
         <Link
           href={`/fighters/${f.fighterBId}`}
           className={cn(
-            "flex min-w-0 items-center gap-1.5 text-sm font-semibold hover:text-primary transition-colors",
+            "flex min-w-0 items-center gap-2 text-sm font-semibold hover:text-primary transition-colors",
             tagB === "W" ? "text-foreground" : finished ? "text-muted" : "text-foreground"
           )}
         >
           {finished && <ResultChip tag={tagB} />}
+          {f.fighterBImage && (
+            <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-background">
+              <Image
+                src={f.fighterBImage}
+                alt={bName}
+                fill
+                sizes="36px"
+                className="object-cover"
+                unoptimized
+              />
+            </span>
+          )}
           <span className="truncate">{bName}</span>
         </Link>
       </div>
