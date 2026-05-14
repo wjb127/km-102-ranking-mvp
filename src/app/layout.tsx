@@ -16,6 +16,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MMA 분석 커뮤니티",
   description: "MMA 선수 투표, 경기 일정, 분석 게시판 — 격투기 팬 커뮤니티",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
