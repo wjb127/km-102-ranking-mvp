@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, Search, Swords, Crown, Ban } from "lucide-react";
+import { AdminShell } from "../_components/admin-shell";
 
 interface FightRow {
   id: number;
@@ -26,8 +26,16 @@ interface FightRow {
 }
 
 export default function AdminFightsPage() {
-  const router = useRouter();
-  const [authChecked, setAuthChecked] = useState(false);
+  return (
+    <Suspense fallback={null}>
+      <AdminShell>
+        <AdminFightsInner />
+      </AdminShell>
+    </Suspense>
+  );
+}
+
+function AdminFightsInner() {
   const [rows, setRows] = useState<FightRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -35,22 +43,6 @@ export default function AdminFightsPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 30;
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/auth/me", { cache: "no-store" });
-        const json = await res.json();
-        if (!json?.data || json.data.role !== "admin") {
-          router.replace("/");
-          return;
-        }
-        setAuthChecked(true);
-      } catch {
-        router.replace("/");
-      }
-    })();
-  }, [router]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,21 +63,13 @@ export default function AdminFightsPage() {
   }, [q, page]);
 
   useEffect(() => {
-    if (authChecked) load();
-  }, [authChecked, load]);
-
-  if (!authChecked) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
-        <p className="text-sm text-[var(--muted)]">권한 확인 중...</p>
-      </div>
-    );
-  }
+    load();
+  }, [load]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-4 py-6 md:px-8 md:py-8">
+    <div className="min-h-screen bg-[var(--background)] px-4 pt-24 pb-6 md:px-8 md:py-8">
       <div className="mx-auto max-w-6xl space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

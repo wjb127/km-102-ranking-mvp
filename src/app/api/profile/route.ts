@@ -178,9 +178,21 @@ export async function PATCH(req: NextRequest) {
 }
 
 // ── DELETE /api/profile : 소프트 탈퇴 ──
+// 관리자 계정은 탈퇴 불가 (서비스 관리 권한 보존 + 잠금 사고 방지).
+// 권한 해제가 필요하면 다른 admin이 /api/admin/users 에서 role 변경 후 처리.
 export async function DELETE() {
   const { session, response } = await requireSession();
   if (response) return response;
+
+  if (session!.role === "admin") {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "관리자 계정은 탈퇴할 수 없습니다. 다른 관리자에게 권한 변경을 요청해주세요.",
+      },
+      { status: 403 }
+    );
+  }
 
   await db
     .update(users)

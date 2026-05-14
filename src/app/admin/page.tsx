@@ -1,17 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
-  Shield,
-  LayoutDashboard,
-  Flag,
-  FileText,
-  Users as UsersIcon,
   UserCheck,
-  Dumbbell,
-  LogOut,
   CheckCircle2,
   XCircle,
   Eye,
@@ -20,14 +13,18 @@ import {
   Ban,
   Swords,
   Calendar,
+  Flag,
+  FileText,
+  Users as UsersIcon,
   MessageSquare,
-  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AdminShell } from "./_components/admin-shell";
 
 // ── 타입 정의 ──
 
 type Tab = "dashboard" | "reports" | "posts" | "users";
+const VALID_TABS: ReadonlyArray<Tab> = ["dashboard", "reports", "posts", "users"];
 
 interface Stats {
   fighters: number;
@@ -78,162 +75,31 @@ interface UserRow {
   commentCount: number;
 }
 
-// ── 사이드바 메뉴 ──
-
-const SIDEBAR_ITEMS: { key: Tab; label: string; icon: typeof LayoutDashboard }[] = [
-  { key: "dashboard", label: "대시보드", icon: LayoutDashboard },
-  { key: "reports", label: "신고 댓글", icon: Flag },
-  { key: "posts", label: "게시글 관리", icon: FileText },
-  { key: "users", label: "사용자 목록", icon: UsersIcon },
-];
-
 // ── 메인 컴포넌트 ──
+// URL searchParams 로 탭 상태 관리 — AdminShell 사이드바 링크가 active 상태를 동기화하기 위함.
 
-export default function AdminPage() {
-  const router = useRouter();
-  const [authChecked, setAuthChecked] = useState(false);
-  const [tab, setTab] = useState<Tab>("dashboard");
-
-  // 인증/권한 체크
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/auth/me", { cache: "no-store" });
-        const json = await res.json();
-        if (!json?.data || json.data.role !== "admin") {
-          router.replace("/");
-          return;
-        }
-        setAuthChecked(true);
-      } catch {
-        router.replace("/");
-      }
-    })();
-  }, [router]);
-
-  if (!authChecked) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
-        <p className="text-sm text-[var(--muted)]">권한 확인 중...</p>
-      </div>
-    );
-  }
+function AdminDashboard() {
+  const searchParams = useSearchParams();
+  const raw = searchParams?.get("tab") ?? "dashboard";
+  const tab: Tab = (VALID_TABS as readonly string[]).includes(raw) ? (raw as Tab) : "dashboard";
 
   return (
-    <div className="flex min-h-screen bg-[var(--background)]">
-      {/* 데스크탑 사이드바 */}
-      <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-40 md:flex md:w-60 md:flex-col md:border-r md:border-[var(--border)] md:bg-[var(--surface)]">
-        <div className="flex items-center gap-2.5 border-b border-[var(--border)] px-5 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)]/10">
-            <Shield className="h-5 w-5 text-[var(--primary)]" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-[var(--foreground)]">관리자 콘솔</h1>
-            <p className="text-[11px] text-[var(--muted)]">MMA 커뮤니티</p>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {SIDEBAR_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = tab === item.key;
-            return (
-              <button
-                key={item.key}
-                onClick={() => setTab(item.key)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
-                  isActive
-                    ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-                    : "text-[var(--muted)] hover:bg-[var(--border)]/40 hover:text-[var(--foreground)]"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="flex-1 text-left">{item.label}</span>
-              </button>
-            );
-          })}
-          <Link
-            href="/admin/fighters"
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--muted)] transition-all hover:bg-[var(--border)]/40 hover:text-[var(--foreground)]"
-          >
-            <Dumbbell className="h-4 w-4" />
-            <span className="flex-1 text-left">선수 수정</span>
-          </Link>
-          <Link
-            href="/admin/fights"
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--muted)] transition-all hover:bg-[var(--border)]/40 hover:text-[var(--foreground)]"
-          >
-            <Swords className="h-4 w-4" />
-            <span className="flex-1 text-left">경기 보정</span>
-          </Link>
-          <Link
-            href="/admin/overrides"
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--muted)] transition-all hover:bg-[var(--border)]/40 hover:text-[var(--foreground)]"
-          >
-            <AlertCircle className="h-4 w-4" />
-            <span className="flex-1 text-left">보정 이력</span>
-          </Link>
-        </nav>
-
-        <div className="border-t border-[var(--border)] px-3 py-3">
-          <Link
-            href="/"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--muted)] transition-all hover:bg-[var(--border)]/40 hover:text-[var(--foreground)]"
-          >
-            <LogOut className="h-4 w-4" />
-            서비스로 돌아가기
-          </Link>
-        </div>
-      </aside>
-
-      {/* 모바일 상단 탭 */}
-      <div className="md:hidden fixed top-11 inset-x-0 z-30 bg-[var(--surface)] border-b border-[var(--border)] overflow-x-auto">
-        <div className="flex gap-1 px-3 py-2 whitespace-nowrap">
-          {SIDEBAR_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = tab === item.key;
-            return (
-              <button
-                key={item.key}
-                onClick={() => setTab(item.key)}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium",
-                  isActive
-                    ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-                    : "text-[var(--muted)]"
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {item.label}
-              </button>
-            );
-          })}
-          <Link
-            href="/admin/fighters"
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-[var(--muted)]"
-          >
-            <Dumbbell className="h-3.5 w-3.5" />
-            선수 수정
-          </Link>
-          <Link
-            href="/admin/fights"
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-[var(--muted)]"
-          >
-            <Swords className="h-3.5 w-3.5" />
-            경기 보정
-          </Link>
-        </div>
-      </div>
-
-      {/* 메인 콘텐츠 */}
-      <main className="flex-1 md:ml-60 px-4 py-6 md:px-8 md:py-8 mt-24 md:mt-0">
-        {tab === "dashboard" && <DashboardView />}
-        {tab === "reports" && <ReportsView />}
-        {tab === "posts" && <PostsView />}
-        {tab === "users" && <UsersView />}
-      </main>
+    <div className="px-4 py-6 md:px-8 md:py-8 pt-24 md:pt-8">
+      {tab === "dashboard" && <DashboardView />}
+      {tab === "reports" && <ReportsView />}
+      {tab === "posts" && <PostsView />}
+      {tab === "users" && <UsersView />}
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminShell>
+        <AdminDashboard />
+      </AdminShell>
+    </Suspense>
   );
 }
 

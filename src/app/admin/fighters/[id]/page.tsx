@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ShieldAlert, Save, Upload } from "lucide-react";
+import { AdminShell } from "../../_components/admin-shell";
 
 interface Fighter {
   id: number;
@@ -51,6 +52,16 @@ const FIELD_LABELS: Record<EditableKey, string> = {
 };
 
 export default function AdminFighterDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminShell>
+        <AdminFighterDetailInner />
+      </AdminShell>
+    </Suspense>
+  );
+}
+
+function AdminFighterDetailInner() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const fighterId = params?.id;
@@ -141,7 +152,7 @@ export default function AdminFighterDetailPage() {
 
   if (loading || !fighter) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-20 px-4 text-center text-sm text-gray-500">
+      <div className="min-h-screen bg-gray-50 pt-24 md:pt-8 px-4 text-center text-sm text-gray-500">
         불러오는 중...
       </div>
     );
@@ -197,7 +208,7 @@ export default function AdminFighterDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 md:pt-20 pb-24 md:pb-12 px-4">
+    <div className="min-h-screen bg-gray-50 pt-24 md:pt-8 pb-24 md:pb-12 px-4">
       <div className="max-w-3xl mx-auto">
         <Link
           href="/admin/fighters"

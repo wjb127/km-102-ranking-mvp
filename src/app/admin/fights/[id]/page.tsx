@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ShieldAlert, Save } from "lucide-react";
+import { AdminShell } from "../../_components/admin-shell";
 
 interface FightDetail {
   id: number;
@@ -36,11 +37,19 @@ const RESULT_OPTIONS = [
 ];
 
 export default function AdminFightEditPage() {
-  const router = useRouter();
+  return (
+    <Suspense fallback={null}>
+      <AdminShell>
+        <AdminFightEditInner />
+      </AdminShell>
+    </Suspense>
+  );
+}
+
+function AdminFightEditInner() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
 
-  const [authChecked, setAuthChecked] = useState(false);
   const [fight, setFight] = useState<FightDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,22 +63,6 @@ export default function AdminFightEditPage() {
   const [round, setRound] = useState<string>("");
   const [time, setTime] = useState<string>("");
   const [isVoid, setIsVoid] = useState<boolean>(false);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/auth/me", { cache: "no-store" });
-        const json = await res.json();
-        if (!json?.data || json.data.role !== "admin") {
-          router.replace("/");
-          return;
-        }
-        setAuthChecked(true);
-      } catch {
-        router.replace("/");
-      }
-    })();
-  }, [router]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -95,8 +88,8 @@ export default function AdminFightEditPage() {
   }, [id]);
 
   useEffect(() => {
-    if (authChecked) load();
-  }, [authChecked, load]);
+    load();
+  }, [load]);
 
   async function save() {
     if (!reason.trim()) {
@@ -132,14 +125,6 @@ export default function AdminFightEditPage() {
     }
   }
 
-  if (!authChecked) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
-        <p className="text-sm text-[var(--muted)]">권한 확인 중...</p>
-      </div>
-    );
-  }
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
@@ -168,7 +153,7 @@ export default function AdminFightEditPage() {
   const bName = fight.fighterB?.nameKo || fight.fighterB?.name || "선수 B";
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-4 py-6 md:px-8 md:py-8">
+    <div className="min-h-screen bg-[var(--background)] px-4 pt-24 pb-6 md:px-8 md:py-8">
       <div className="mx-auto max-w-2xl space-y-5">
         <div>
           <Link

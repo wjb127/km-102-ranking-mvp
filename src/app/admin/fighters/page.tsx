@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, ShieldAlert } from "lucide-react";
+import { AdminShell } from "../_components/admin-shell";
 
 interface FighterRow {
   id: number;
@@ -18,6 +19,16 @@ interface FighterRow {
 }
 
 export default function AdminFightersPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminShell>
+        <AdminFightersInner />
+      </AdminShell>
+    </Suspense>
+  );
+}
+
+function AdminFightersInner() {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<FighterRow[]>([]);
@@ -60,7 +71,7 @@ export default function AdminFightersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 md:pt-20 pb-24 md:pb-12 px-4">
+    <div className="min-h-screen bg-gray-50 pt-24 md:pt-8 pb-24 md:pb-12 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">

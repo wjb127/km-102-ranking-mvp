@@ -520,22 +520,24 @@ export default function ProfilePage() {
           )}
         </section>
 
-        {/* 회원 탈퇴 */}
-        <section className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/5 p-5">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--danger)]">
-            <AlertTriangle className="h-4 w-4" /> 회원 탈퇴
-          </h3>
-          <p className="mb-4 text-xs text-[var(--muted)]">
-            탈퇴 시 계정은 비활성화되며, 이후 동일 이메일로 로그인할 수 없습니다. 작성한 게시글과
-            댓글은 유지됩니다.
-          </p>
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            className="rounded-md border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-4 py-2 text-sm font-semibold text-[var(--danger)] hover:bg-[var(--danger)]/20"
-          >
-            회원 탈퇴
-          </button>
-        </section>
+        {/* 회원 탈퇴 — 관리자 계정은 노출하지 않음 (서버에서도 차단) */}
+        {profile.role !== "admin" && (
+          <section className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/5 p-5">
+            <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--danger)]">
+              <AlertTriangle className="h-4 w-4" /> 회원 탈퇴
+            </h3>
+            <p className="mb-4 text-xs text-[var(--muted)]">
+              탈퇴 시 계정은 비활성화되며, 이후 동일 이메일로 로그인할 수 없습니다. 작성한 게시글과
+              댓글은 유지됩니다.
+            </p>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="rounded-md border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-4 py-2 text-sm font-semibold text-[var(--danger)] hover:bg-[var(--danger)]/20"
+            >
+              회원 탈퇴
+            </button>
+          </section>
+        )}
       </div>
 
       {/* 탈퇴 확인 모달 */}
