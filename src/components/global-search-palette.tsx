@@ -200,7 +200,7 @@ export default function GlobalSearchPalette({
                               {formatNameKoEn(fighter.nameKo, fighter.name)}
                             </span>
                             <span className="block truncate text-xs text-muted">
-                              {fighter.nicknameKo || fighter.nickname || (fighter.weightClass ? weightKo(fighter.weightClass) : fighter.name)}
+                              {fighter.nickname || fighter.nicknameKo || (fighter.weightClass ? weightKo(fighter.weightClass) : fighter.name)}
                             </span>
                           </span>
                         </Link>

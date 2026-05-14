@@ -192,7 +192,7 @@ export default function HomePage() {
               const total = fighter.wins + fighter.losses + fighter.draws;
               const winRate = total > 0 ? Math.round((fighter.wins / total) * 100) : 0;
               const displayName = fighter.fullNameKo || fighter.fullName;
-              const nick = fighter.nicknameKo || fighter.nickname;
+              const nick = fighter.nickname || fighter.nicknameKo;
               return (
                 <motion.div
                   key={fighter.id}

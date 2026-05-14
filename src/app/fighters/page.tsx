@@ -118,7 +118,7 @@ function FighterCard({
 
   const displayName = primaryName(fighter.fullNameKo, fighter.fullName);
   const subName = secondaryName(fighter.fullNameKo, fighter.fullName);
-  const nick = fighter.nicknameKo || fighter.nickname;
+  const nick = fighter.nickname || fighter.nicknameKo;
   const compareDisabled = compareFull && !selected;
 
   return (
@@ -248,7 +248,7 @@ function FighterRow({
   const { totalFights, winRate } = getFighterStats(fighter);
   const displayName = primaryName(fighter.fullNameKo, fighter.fullName);
   const subName = secondaryName(fighter.fullNameKo, fighter.fullName);
-  const nick = fighter.nicknameKo || fighter.nickname;
+  const nick = fighter.nickname || fighter.nicknameKo;
   const compareDisabled = compareFull && !selected;
 
   return (

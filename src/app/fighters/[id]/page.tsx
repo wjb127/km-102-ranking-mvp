@@ -432,7 +432,7 @@ function FighterDetailClient({ id }: { id: string }) {
 
   const displayName = primaryName(fighter?.fullNameKo, fighter?.fullName);
   const subName = secondaryName(fighter?.fullNameKo, fighter?.fullName);
-  const nick = fighter?.nicknameKo || fighter?.nickname;
+  const nick = fighter?.nickname || fighter?.nicknameKo;
   const nationalityDisplay = fighter?.nationalityKo || fighter?.nationality;
 
   return (

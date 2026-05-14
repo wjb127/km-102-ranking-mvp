@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { asc, ilike, or } from "drizzle-orm";
+import { and, asc, ilike, or, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth/guard";
@@ -13,6 +14,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10) || 50, 200);
+  const includeIncomplete = searchParams.get("includeIncomplete") === "1";
 
   const rowsQuery = db
     .select({
@@ -28,19 +30,40 @@ export async function GET(req: NextRequest) {
     })
     .from(fighters);
 
-  const rows = q
-    ? await rowsQuery
-        .where(
-          or(
-            ilike(fighters.fullName, `%${q}%`),
-            ilike(fighters.fullNameKo, `%${q}%`),
-            ilike(fighters.nickname, `%${q}%`),
-            ilike(fighters.nicknameKo, `%${q}%`)
-          )
-        )
-        .orderBy(asc(fighters.fullName))
-        .limit(limit)
-    : await rowsQuery.orderBy(asc(fighters.fullName)).limit(limit);
+  const conditions: SQL[] = [];
+  if (q) {
+    const searchCond = or(
+      ilike(fighters.fullName, `%${q}%`),
+      ilike(fighters.fullNameKo, `%${q}%`),
+      ilike(fighters.nickname, `%${q}%`),
+      ilike(fighters.nicknameKo, `%${q}%`)
+    );
+    if (searchCond) conditions.push(searchCond);
+  }
+  if (!includeIncomplete) {
+    conditions.push(sql`NOT (
+      ${fighters.externalId} IS NULL
+      AND ${fighters.fullNameKo} IS NOT NULL
+      AND EXISTS (
+        SELECT 1
+        FROM fighters f2
+        WHERE f2.id <> ${fighters.id}
+          AND f2.external_id IS NOT NULL
+          AND f2.full_name_ko = ${fighters.fullNameKo}
+      )
+    )`);
+  }
+
+  const whereExpr = conditions.length === 0
+    ? undefined
+    : conditions.length === 1
+      ? conditions[0]
+      : and(...conditions);
+
+  const rows = await rowsQuery
+    .where(whereExpr)
+    .orderBy(sql`${fighters.externalId} IS NULL`, asc(fighters.fullName))
+    .limit(limit);
 
   return NextResponse.json({ success: true, data: rows });
 }
