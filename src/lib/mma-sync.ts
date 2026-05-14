@@ -23,6 +23,12 @@ const RETIRED_FIGHTER_EXTERNAL_ID_ALIASES = new Map<number, number>([
   [40425, 13935], // Dustin West -> dustin west
 ]);
 
+// 검증 후 병합한 balldontlie 중복 event external_id.
+// 같은 일정이 API에 일반명/브랜드명으로 같이 내려온 케이스는 더 구체적인 이벤트 row로 매핑한다.
+const RETIRED_EVENT_EXTERNAL_ID_ALIASES = new Map<number, number>([
+  [80621, 91283], // Rousey vs. Carano -> MVP MMA: Rousey vs. Carano
+]);
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -374,6 +380,27 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
 
   async function upsertEvent(event: BDLEvent): Promise<{ id: number; organizationId: number | null }> {
     if (eventCache.has(event.id)) return eventCache.get(event.id)!;
+
+    const keeperExternalId = RETIRED_EVENT_EXTERNAL_ID_ALIASES.get(event.id);
+    if (keeperExternalId) {
+      const [keeper] = await db
+        .select({ id: mmaEvents.id, organizationId: mmaEvents.organizationId })
+        .from(mmaEvents)
+        .where(eq(mmaEvents.externalId, keeperExternalId))
+        .limit(1);
+      if (keeper) {
+        const payload = { id: keeper.id, organizationId: keeper.organizationId };
+        eventCache.set(event.id, payload);
+        log(
+          `[events] SKIP retired external_id=${event.id} -> event_external_id=${keeperExternalId}`
+        );
+        return payload;
+      }
+
+      log(
+        `[events] WARN retired external_id=${event.id}의 keeper external_id=${keeperExternalId}를 찾지 못했습니다.`
+      );
+    }
 
     const organizationId = event.league ? await upsertOrganization(event.league) : null;
     const values = buildEventValues(event, organizationId);
