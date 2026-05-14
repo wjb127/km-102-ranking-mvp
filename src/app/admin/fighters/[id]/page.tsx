@@ -172,7 +172,7 @@ export default function AdminFighterDetailPage() {
         setUploadError(sigJson.error ?? "서명 발급 실패");
         return;
       }
-      const { cloudName, apiKey, timestamp, signature, folder, uploadUrl } = sigJson.data;
+      const { cloudName, apiKey, timestamp, signature, folder, uploadUrl, allowedFormats } = sigJson.data;
 
       const fd = new FormData();
       fd.append("file", file);
@@ -180,6 +180,7 @@ export default function AdminFighterDetailPage() {
       fd.append("timestamp", String(timestamp));
       fd.append("signature", signature);
       fd.append("folder", folder);
+      fd.append("allowed_formats", allowedFormats.join(","));
 
       const cloudRes = await fetch(uploadUrl ?? `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
         method: "POST",
