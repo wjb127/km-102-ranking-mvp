@@ -263,6 +263,22 @@ export const mmaEvents = pgTable(
   ]
 );
 
+/** 외부 API 이벤트 중복 external_id alias */
+export const eventExternalIdAliases = pgTable(
+  "event_external_id_aliases",
+  {
+    id: serial("id").primaryKey(),
+    retiredExternalId: integer("retired_external_id").notNull().unique(),
+    keeperExternalId: integer("keeper_external_id")
+      .notNull()
+      .references(() => mmaEvents.externalId),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("idx_event_external_id_aliases_keeper").on(t.keeperExternalId)]
+);
+
 /** 경기 */
 export const fights = pgTable(
   "fights",

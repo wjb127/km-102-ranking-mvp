@@ -5,6 +5,7 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  eventExternalIdAliases,
   fighterOrgRecords,
   fighters,
   fights,
@@ -21,12 +22,6 @@ export const RATE_LIMIT_MS = 13_000;
 const RETIRED_FIGHTER_EXTERNAL_ID_ALIASES = new Map<number, number>([
   [32349, 14900], // Bruno Da Silva -> Bruno da Silva
   [40425, 13935], // Dustin West -> dustin west
-]);
-
-// 검증 후 병합한 balldontlie 중복 event external_id.
-// 같은 일정이 API에 일반명/브랜드명으로 같이 내려온 케이스는 더 구체적인 이벤트 row로 매핑한다.
-const RETIRED_EVENT_EXTERNAL_ID_ALIASES = new Map<number, number>([
-  [80621, 91283], // Rousey vs. Carano -> MVP MMA: Rousey vs. Carano
 ]);
 
 function sleep(ms: number) {
@@ -243,6 +238,24 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
   const organizationCache = new Map<number, number>();
   const fighterCache = new Map<number, number>();
   const eventCache = new Map<number, { id: number; organizationId: number | null }>();
+  const eventExternalIdAliasCache = new Map<number, number>();
+  let eventExternalIdAliasesLoaded = false;
+
+  async function loadEventExternalIdAliases() {
+    if (eventExternalIdAliasesLoaded) return;
+
+    const rows = await db
+      .select({
+        retiredExternalId: eventExternalIdAliases.retiredExternalId,
+        keeperExternalId: eventExternalIdAliases.keeperExternalId,
+      })
+      .from(eventExternalIdAliases);
+
+    for (const row of rows) {
+      eventExternalIdAliasCache.set(row.retiredExternalId, row.keeperExternalId);
+    }
+    eventExternalIdAliasesLoaded = true;
+  }
 
   async function upsertOrganization(league: BDLLeague): Promise<number> {
     if (organizationCache.has(league.id)) return organizationCache.get(league.id)!;
@@ -381,7 +394,8 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
   async function upsertEvent(event: BDLEvent): Promise<{ id: number; organizationId: number | null }> {
     if (eventCache.has(event.id)) return eventCache.get(event.id)!;
 
-    const keeperExternalId = RETIRED_EVENT_EXTERNAL_ID_ALIASES.get(event.id);
+    await loadEventExternalIdAliases();
+    const keeperExternalId = eventExternalIdAliasCache.get(event.id);
     if (keeperExternalId) {
       const [keeper] = await db
         .select({ id: mmaEvents.id, organizationId: mmaEvents.organizationId })
