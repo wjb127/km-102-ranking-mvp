@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { alias } from "drizzle-orm/pg-core";
-import { desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters, fighterOrgRecords, organizations, fights, mmaEvents } from "@/db/schema";
 
@@ -18,7 +18,14 @@ export async function GET(
   const [fighterRow] = await db
     .select()
     .from(fighters)
-    .where(eq(fighters.id, fighterId))
+    .where(
+      and(
+        eq(fighters.id, fighterId),
+        isNotNull(fighters.weightClass),
+        sql`${fighters.fullName} !~ '^Fighter [0-9]+$'`,
+        sql`(${fighters.careerWins} + ${fighters.careerLosses} + ${fighters.careerDraws}) > 0`
+      )
+    )
     .limit(1);
 
   if (!fighterRow) {

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, notExists } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { mmaEvents, organizations } from "@/db/schema";
+import { eventExternalIdAliases, mmaEvents, organizations } from "@/db/schema";
 
 // ── GET /api/mma-events?org=ufc&upcoming=true ──
 // 이벤트 목록. org/upcoming/past 필터. 기본은 최근순.
@@ -31,6 +31,14 @@ export async function GET(req: NextRequest) {
   if (orgId != null) conditions.push(eq(mmaEvents.organizationId, orgId));
   if (upcoming) conditions.push(gte(mmaEvents.eventDate, now));
   if (past) conditions.push(lte(mmaEvents.eventDate, now));
+  conditions.push(
+    notExists(
+      db
+        .select({ id: eventExternalIdAliases.id })
+        .from(eventExternalIdAliases)
+        .where(eq(eventExternalIdAliases.retiredExternalId, mmaEvents.externalId))
+    )
+  );
 
   const whereExpr = conditions.length === 0
     ? undefined

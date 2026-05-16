@@ -418,19 +418,75 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
 
     const organizationId = event.league ? await upsertOrganization(event.league) : null;
     const values = buildEventValues(event, organizationId);
+    const [existingEvent] = await db
+      .select({
+        id: mmaEvents.id,
+        externalId: mmaEvents.externalId,
+        name: mmaEvents.name,
+        nameKo: mmaEvents.nameKo,
+        organizationId: mmaEvents.organizationId,
+      })
+      .from(mmaEvents)
+      .where(eq(mmaEvents.externalId, event.id))
+      .limit(1);
+
+    // 외부 API가 같은 실물 이벤트를 새 external_id로 다시 내려주는 경우가 있다.
+    // 정확히 같은 제목+일시가 이미 있으면 신규 row를 만들지 않고 alias만 추가한다.
+    if (!existingEvent && values.eventDate) {
+      const [duplicateEvent] = await db
+        .select({
+          id: mmaEvents.id,
+          externalId: mmaEvents.externalId,
+          organizationId: mmaEvents.organizationId,
+        })
+        .from(mmaEvents)
+        .where(
+          and(
+            sql`lower(${mmaEvents.name}) = lower(${values.name})`,
+            eq(mmaEvents.eventDate, values.eventDate),
+            sql`NOT EXISTS (
+              SELECT 1
+              FROM event_external_id_aliases aliases
+              WHERE aliases.retired_external_id = ${mmaEvents.externalId}
+            )`
+          )
+        )
+        .limit(1);
+
+      if (duplicateEvent?.externalId != null) {
+        await db
+          .insert(eventExternalIdAliases)
+          .values({
+            retiredExternalId: event.id,
+            keeperExternalId: duplicateEvent.externalId,
+            reason: "sync 자동 감지: 동일 이름+일시 이벤트",
+          })
+          .onConflictDoUpdate({
+            target: eventExternalIdAliases.retiredExternalId,
+            set: {
+              keeperExternalId: duplicateEvent.externalId,
+              reason: "sync 자동 감지: 동일 이름+일시 이벤트",
+              updatedAt: new Date(),
+            },
+          });
+
+        eventExternalIdAliasCache.set(event.id, duplicateEvent.externalId);
+        const payload = { id: duplicateEvent.id, organizationId: duplicateEvent.organizationId };
+        eventCache.set(event.id, payload);
+        log(
+          `[events] AUTO ALIAS external_id=${event.id} -> event_external_id=${duplicateEvent.externalId}`
+        );
+        return payload;
+      }
+    }
 
     // 과거 시드 더미 패턴 감지 — 2026-05 시드 사고 대응 (위 upsertFighter 주석 참조).
     // mismatch (DB 기존 이름 != API 응답 이름) 일 때만 WARN.
     if (event.id >= 5001 && event.id <= 5003) {
-      const [existingEvt] = await db
-        .select({ name: mmaEvents.name })
-        .from(mmaEvents)
-        .where(eq(mmaEvents.externalId, event.id))
-        .limit(1);
-      if (existingEvt && existingEvt.name !== values.name) {
+      if (existingEvent && existingEvent.name !== values.name) {
         log(
           `[events] WARN 시드 잔재 의심 external_id=${event.id}. ` +
-          `DB="${existingEvt.name}" vs API="${values.name}".`
+          `DB="${existingEvent.name}" vs API="${values.name}".`
         );
       }
     }
@@ -453,6 +509,7 @@ function makeContext(apiKey: string, log: (msg: string) => void) {
           venueCity: values.venueCity,
           venueState: values.venueState,
           country: values.country,
+          ...(existingEvent && existingEvent.name !== values.name ? { nameKo: null } : {}),
         },
       })
       .returning({ id: mmaEvents.id });

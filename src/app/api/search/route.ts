@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, desc, ilike, isNotNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, isNotNull, notExists, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { fighters, mmaEvents } from "@/db/schema";
+import { eventExternalIdAliases, fighters, mmaEvents } from "@/db/schema";
 
 const WEIGHT_CLASSES = [
   "Strawweight",
@@ -67,7 +67,17 @@ export async function GET(req: NextRequest) {
       venueKo: mmaEvents.venueKo,
     })
     .from(mmaEvents)
-    .where(or(ilike(mmaEvents.name, pattern), ilike(mmaEvents.nameKo, pattern)))
+    .where(
+      and(
+        or(ilike(mmaEvents.name, pattern), ilike(mmaEvents.nameKo, pattern)),
+        notExists(
+          db
+            .select({ id: eventExternalIdAliases.id })
+            .from(eventExternalIdAliases)
+            .where(eq(eventExternalIdAliases.retiredExternalId, mmaEvents.externalId))
+        )
+      )
+    )
     .orderBy(desc(mmaEvents.eventDate))
     .limit(limit);
 

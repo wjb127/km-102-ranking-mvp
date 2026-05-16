@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { fighters, fighterEditSuggestions } from "@/db/schema";
 import { requireSession } from "@/lib/auth/guard";
@@ -47,7 +47,14 @@ export async function POST(
   const [fighter] = await db
     .select()
     .from(fighters)
-    .where(eq(fighters.id, fighterId))
+    .where(
+      and(
+        eq(fighters.id, fighterId),
+        isNotNull(fighters.weightClass),
+        sql`${fighters.fullName} !~ '^Fighter [0-9]+$'`,
+        sql`(${fighters.careerWins} + ${fighters.careerLosses} + ${fighters.careerDraws}) > 0`
+      )
+    )
     .limit(1);
 
   if (!fighter) {

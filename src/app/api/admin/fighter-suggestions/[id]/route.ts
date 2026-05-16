@@ -81,8 +81,20 @@ export async function PATCH(
     return NextResponse.json({ success: false, error: "선수를 찾을 수 없습니다." }, { status: 404 });
   }
 
+  const currentValue = (currentFighter[fieldKey] as string | null) ?? null;
+  if (currentValue !== suggestion.oldValue) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "제안 생성 이후 현재 값이 변경되었습니다. 다시 검토해주세요.",
+        currentValue,
+      },
+      { status: 409 }
+    );
+  }
+
   const beforeData = {
-    [suggestion.fieldName]: suggestion.oldValue,
+    [suggestion.fieldName]: currentValue,
   };
   const afterData = {
     [suggestion.fieldName]: suggestion.newValue,

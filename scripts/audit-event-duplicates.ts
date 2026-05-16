@@ -30,6 +30,29 @@ async function printQuery(label: string, query: string) {
 
 async function main() {
   await printQuery(
+    "공개 노출 기준 이름+날짜 중복",
+    `
+      SELECT
+        lower(e.name) AS normalized_name,
+        e.event_date,
+        count(*)::int AS duplicate_count,
+        array_agg(e.id ORDER BY e.id)::text AS ids,
+        array_agg(e.external_id ORDER BY e.id)::text AS external_ids
+      FROM events e
+      WHERE e.event_date IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1
+          FROM event_external_id_aliases a
+          WHERE a.retired_external_id = e.external_id
+        )
+      GROUP BY lower(e.name), e.event_date
+      HAVING count(*) > 1
+      ORDER BY duplicate_count DESC, e.event_date DESC
+      LIMIT 50;
+    `
+  );
+
+  await printQuery(
     "이름+날짜 완전 동일",
     `
       SELECT
