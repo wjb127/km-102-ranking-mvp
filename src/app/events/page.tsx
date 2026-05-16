@@ -12,6 +12,13 @@ import type { DbEventSummary } from "@/lib/mma-types";
 // ── 상수 ──
 
 const YEAR_TABS = [2024, 2025, 2026];
+const ORG_TABS = [
+  { slug: "", label: "전체" },
+  { slug: "ufc", label: "UFC" },
+  { slug: "pfl", label: "PFL" },
+  { slug: "one", label: "ONE" },
+  { slug: "bellator", label: "벨라토르" },
+] as const;
 
 const fetcher = (url: string) =>
   fetch(url).then((res) => {
@@ -154,9 +161,10 @@ export default function EventsPage() {
   const [selectedYear, setSelectedYear] = useState(
     YEAR_TABS.includes(currentYear) ? currentYear : YEAR_TABS[YEAR_TABS.length - 1]
   );
+  const [selectedOrg, setSelectedOrg] = useState<(typeof ORG_TABS)[number]["slug"]>("");
 
   const { data, isLoading, error } = useSWR<{ success: boolean; data: DbEventSummary[] }>(
-    `/api/mma-events?limit=200`,
+    `/api/mma-events?limit=200${selectedOrg ? `&org=${selectedOrg}` : ""}`,
     fetcher,
     { revalidateOnFocus: false }
   );
@@ -217,22 +225,41 @@ export default function EventsPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.12, ease: "easeOut" as const }}
-          className="flex gap-2 mb-8"
+          className="mb-8 space-y-3"
         >
-          {YEAR_TABS.map((year) => (
-            <button
-              key={year}
-              onClick={() => setSelectedYear(year)}
-              className={cn(
-                "px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200",
-                selectedYear === year
-                  ? "bg-primary text-white shadow-md shadow-primary/25"
-                  : "bg-surface border border-border text-muted hover:border-primary/40 hover:text-foreground"
-              )}
-            >
-              {year}
-            </button>
-          ))}
+          <div className="flex flex-wrap gap-2">
+            {YEAR_TABS.map((year) => (
+              <button
+                key={year}
+                onClick={() => setSelectedYear(year)}
+                className={cn(
+                  "px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200",
+                  selectedYear === year
+                    ? "bg-primary text-white shadow-md shadow-primary/25"
+                    : "bg-surface border border-border text-muted hover:border-primary/40 hover:text-foreground"
+                )}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {ORG_TABS.map((org) => (
+              <button
+                key={org.slug || "all"}
+                onClick={() => setSelectedOrg(org.slug)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200",
+                  selectedOrg === org.slug
+                    ? "bg-foreground text-background"
+                    : "bg-surface border border-border text-muted hover:border-primary/40 hover:text-foreground"
+                )}
+              >
+                {org.label}
+              </button>
+            ))}
+          </div>
         </motion.div>
 
         {isLoading && (
@@ -252,7 +279,13 @@ export default function EventsPage() {
         {!isLoading && !error && events.length === 0 && (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-surface/50 py-16 text-center">
             <Calendar className="h-8 w-8 text-muted/40" />
-            <p className="text-sm text-muted">{selectedYear}년 등록된 이벤트가 없습니다.</p>
+            <p className="text-sm text-muted">
+              {selectedYear}년
+              {selectedOrg
+                ? ` ${ORG_TABS.find((org) => org.slug === selectedOrg)?.label ?? ""}`
+                : ""}{" "}
+              등록된 이벤트가 없습니다.
+            </p>
           </div>
         )}
 
