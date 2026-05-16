@@ -9,6 +9,7 @@ import {
   Flag,
   LayoutDashboard,
   LogOut,
+  MessageSquarePlus,
   Shield,
   Swords,
   Users as UsersIcon,
@@ -26,6 +27,7 @@ const MAIN_ITEMS: { key: AdminTab; label: string; icon: typeof LayoutDashboard }
 
 const LINK_ITEMS = [
   { href: "/admin/fighters", label: "선수 수정", icon: Dumbbell },
+  { href: "/admin/fighter-suggestions", label: "수정 제안", icon: MessageSquarePlus },
   { href: "/admin/fights", label: "경기 보정", icon: Swords },
   { href: "/admin/overrides", label: "보정 이력", icon: AlertCircle },
 ];

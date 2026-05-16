@@ -465,6 +465,35 @@ export const messages = pgTable(
   ]
 );
 
+/** 선수 정보 수정 제안 */
+export const fighterEditSuggestions = pgTable(
+  "fighter_edit_suggestions",
+  {
+    id: serial("id").primaryKey(),
+    fighterId: integer("fighter_id")
+      .notNull()
+      .references(() => fighters.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    userNickname: varchar("user_nickname", { length: 50 }).notNull(),
+    fieldName: varchar("field_name", { length: 50 }).notNull(),
+    oldValue: text("old_value"),
+    newValue: text("new_value").notNull(),
+    reason: text("reason"),
+    status: varchar("status", { length: 20 }).notNull().default("pending"),
+    reviewedBy: uuid("reviewed_by").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    rejectReason: text("reject_reason"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_fighter_edit_suggestions_fighter").on(t.fighterId),
+    index("idx_fighter_edit_suggestions_status").on(t.status),
+    index("idx_fighter_edit_suggestions_user").on(t.userId),
+  ]
+);
+
 /** 번역 캐시 */
 export const translations = pgTable(
   "translations",

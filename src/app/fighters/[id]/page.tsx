@@ -13,6 +13,10 @@ import {
   Dumbbell,
   Trophy,
   Calendar,
+  Pencil,
+  Send,
+  X,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNameKoEn, primaryName, secondaryName } from "@/lib/format-name";
@@ -393,10 +397,163 @@ function FightRecordTable({
   );
 }
 
+// ── 수정 제안 모달 ──
+
+const SUGGEST_FIELDS = [
+  { key: "fullNameKo", label: "한글명" },
+  { key: "nicknameKo", label: "한글 별명" },
+  { key: "nationalityKo", label: "한글 국적" },
+  { key: "nickname", label: "영문 별명" },
+] as const;
+
+function SuggestEditModal({
+  fighter,
+  onClose,
+  onSubmitted,
+}: {
+  fighter: FighterDetailResponse["fighter"];
+  onClose: () => void;
+  onSubmitted: () => void;
+}) {
+  const [field, setField] = useState<string>(SUGGEST_FIELDS[0].key);
+  const [newValue, setNewValue] = useState("");
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const currentValue = (() => {
+    if (field === "fullNameKo") return fighter.fullNameKo ?? "";
+    if (field === "nicknameKo") return fighter.nicknameKo ?? "";
+    if (field === "nationalityKo") return fighter.nationalityKo ?? "";
+    if (field === "nickname") return fighter.nickname ?? "";
+    return "";
+  })();
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!newValue.trim()) {
+      setError("수정 값을 입력해주세요.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/mma-fighters/${fighter.id}/suggestions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fieldName: field, newValue: newValue.trim(), reason: reason.trim() }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        setError(json.error || "제안 등록 실패");
+        return;
+      }
+      setSuccess(true);
+      setTimeout(() => {
+        onSubmitted();
+        onClose();
+      }, 1200);
+    } catch {
+      setError("네트워크 오류");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {success ? (
+          <div className="flex flex-col items-center gap-3 py-8">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success/10">
+              <Check className="h-6 w-6 text-success" />
+            </div>
+            <p className="text-sm font-semibold text-foreground">수정 제안이 등록되었습니다</p>
+            <p className="text-xs text-muted">관리자 승인 후 반영됩니다.</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-bold text-foreground">선수 정보 수정 제안</h3>
+              <button onClick={onClose} className="text-muted hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted">수정 항목</label>
+                <select
+                  value={field}
+                  onChange={(e) => { setField(e.target.value); setNewValue(""); }}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                >
+                  {SUGGEST_FIELDS.map((f) => (
+                    <option key={f.key} value={f.key}>{f.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted">현재 값</label>
+                <div className="rounded-lg border border-border bg-background/50 px-3 py-2 text-sm text-muted">
+                  {currentValue || "(없음)"}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted">수정 값</label>
+                <input
+                  type="text"
+                  value={newValue}
+                  onChange={(e) => setNewValue(e.target.value)}
+                  maxLength={200}
+                  placeholder="변경할 값을 입력하세요"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted/50"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted">사유 (선택)</label>
+                <input
+                  type="text"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  maxLength={500}
+                  placeholder="수정 이유를 간단히 적어주세요"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted/50"
+                />
+              </div>
+
+              {error && <p className="text-xs text-danger">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+              >
+                <Send className="h-4 w-4" />
+                {submitting ? "제출 중..." : "수정 제안하기"}
+              </button>
+            </form>
+          </>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
 // ── 상세 클라이언트 컴포넌트 ──
 
 function FighterDetailClient({ id }: { id: string }) {
   const [fingerprint, setFingerprint] = useState("");
+  const [showSuggestModal, setShowSuggestModal] = useState(false);
 
   useEffect(() => {
     getFingerprint().then(setFingerprint);
@@ -566,6 +723,31 @@ function FighterDetailClient({ id }: { id: string }) {
                   </div>
                 )}
               </motion.div>
+
+              {/* 수정 제안 버튼 */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.22, ease: "easeOut" as const }}
+                className="mb-6"
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowSuggestModal(true)}
+                  className="flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:border-primary/40 hover:text-primary"
+                >
+                  <Pencil className="h-4 w-4" />
+                  선수 정보 수정 제안
+                </button>
+              </motion.div>
+
+              {showSuggestModal && fighter && (
+                <SuggestEditModal
+                  fighter={fighter}
+                  onClose={() => setShowSuggestModal(false)}
+                  onSubmitted={() => {}}
+                />
+              )}
 
               {/* 최근 경기 */}
               <motion.div
