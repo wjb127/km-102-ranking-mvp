@@ -13,12 +13,37 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : "https://km-102-ranking-mvp.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "MMA 분석 커뮤니티",
   description: "MMA 선수 투표, 경기 일정, 분석 게시판 — 격투기 팬 커뮤니티",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
+  },
+  openGraph: {
+    title: "MMA 분석 커뮤니티",
+    description: "MMA 선수 투표, 경기 일정, 분석 게시판 — 격투기 팬 커뮤니티",
+    images: [
+      {
+        url: "/images/og-image.png",
+        width: 1536,
+        height: 1024,
+        alt: "한국 MMA 커뮤니티",
+      },
+    ],
+    type: "website",
+    locale: "ko_KR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MMA 분석 커뮤니티",
+    description: "MMA 선수 투표, 경기 일정, 분석 게시판 — 격투기 팬 커뮤니티",
+    images: ["/images/og-image.png"],
   },
 };
 
